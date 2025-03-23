@@ -37,6 +37,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'sportscenters.apps.SportscentersConfig'
 ]
 
 MIDDLEWARE = [
@@ -75,10 +76,17 @@ WSGI_APPLICATION = 'sportscenterapis.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'sportdb',
+        'USER': 'root',
+        'PASSWORD': 'Admin@123',
+        'HOST': ''
     }
 }
+
+
+import pymysql
+pymysql.install_as_MySQLdb()
 
 
 # Password validation
