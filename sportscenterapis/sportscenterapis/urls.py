@@ -15,8 +15,23 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+from rest_framework import permissions
 
+schema_view = get_schema_view(
+    openapi.Info(
+        title="Sport Center APIs",
+        default_version='25.1',
+        description="APIs for Sport Center App",
+        contact=openapi.Contact(email="tgkiet03@gmail.com"),
+        license=openapi.License(name="Thạch Gia Kiệt@2025"),
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
+)
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include('sportscenters.urls')),
 ]

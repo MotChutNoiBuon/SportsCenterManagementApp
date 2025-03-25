@@ -70,7 +70,7 @@ class Receptionist(BaseModel):
 class Class(BaseModel):
     name = models.CharField(max_length=100)
     description = models.TextField()
-    trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE)
+    trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE, auto_created=True)
     schedule = models.DateTimeField()
     max_members = models.IntegerField()
     status = models.CharField(max_length=20, choices=[('active', 'Active'), ('cancelled', 'Cancelled'), ('completed', 'Completed')])
