@@ -89,6 +89,8 @@ DATABASES = {
 import pymysql
 pymysql.install_as_MySQLdb()
 
+# Chi định lớp model đại diện cho 1 user, mặc định là auth.User
+AUTH_USER_MODEL = 'sportscenters.User'
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators

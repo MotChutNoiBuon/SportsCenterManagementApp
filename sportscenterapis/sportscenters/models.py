@@ -1,7 +1,18 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
-class User(AbstractUser):
+
+class BaseModel(models.Model):
+    active = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now_add=True)
+    updated_date = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+        ordering = ['-id']
+
+
+class User(AbstractUser, BaseModel):
     ROLE_CHOICES = [
         ('admin', 'Admin'),
         ('trainer', 'Trainer'),
@@ -16,25 +27,17 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.username} - {self.role}"
 
-# Bảng hội viên
-class Member(models.Model):
-    MEMBERSHIP_CHOICES = [
-        ('basic', 'Basic'),
-        ('premium', 'Premium'),
-        ('vip', 'VIP'),
-    ]
 
+# Bảng hội viên
+class Member(BaseModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    date_of_birth = models.DateField(null=True, blank=True)
-    membership_type = models.CharField(max_length=10, choices=MEMBERSHIP_CHOICES)
-    subscription_status = models.CharField(max_length=10, default='active')
     payment_status = models.CharField(max_length=10, default='unpaid')
 
     def __str__(self):
         return f"{self.user.username} - {self.membership_type}"
 
 # Bảng huấn luyện viên
-class Trainer(models.Model):
+class Trainer(BaseModel):
     SPECIALIZATIONS = [
         ('gym', 'Gym'),
         ('yoga', 'Yoga'),
@@ -45,14 +48,12 @@ class Trainer(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     specialization = models.CharField(max_length=20, choices=SPECIALIZATIONS)
     experience_years = models.IntegerField()
-    certifications = models.TextField(null=True, blank=True)
-    bio = models.TextField(null=True, blank=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.specialization}"
 
 # Bảng nhân viên lễ tân
-class Receptionist(models.Model):
+class Receptionist(BaseModel):
     WORK_SHIFTS = [
         ('morning', 'Morning'),
         ('afternoon', 'Afternoon'),
@@ -66,7 +67,7 @@ class Receptionist(models.Model):
         return f"{self.user.username} - {self.work_shift}"
 
 # Bảng lớp học
-class Class(models.Model):
+class Class(BaseModel):
     name = models.CharField(max_length=100)
     description = models.TextField()
     trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE)
@@ -79,33 +80,30 @@ class Class(models.Model):
         return self.name
 
 # Bảng đăng ký lớp học
-class Enrollment(models.Model):
+class Enrollment(BaseModel):
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
     gym_class = models.ForeignKey(Class, on_delete=models.CASCADE)
     status = models.CharField(max_length=10, default='pending')
-    payment_status = models.CharField(max_length=10, default='unpaid')
-    enrolled_date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.member.user.username} - {self.gym_class.name}"
 
 # Bảng tiến độ tập luyện
-class Progress(models.Model):
+class Progress(BaseModel):
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
     trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE)
     gym_class = models.ForeignKey(Class, on_delete=models.SET_NULL, null=True, blank=True)
     progress_note = models.TextField()
-    date_updated = models.DateTimeField(auto_now=True)
+
 
     def __str__(self):
         return f"{self.member.user.username} - {self.trainer.user.username}"
 
 # Bảng lịch tư vấn riêng
-class Appointment(models.Model):
+class Appointment(BaseModel):
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
     trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE)
     date_time = models.DateTimeField()
-    status = models.CharField(max_length=10, choices=[('pending', 'Pending'), ('confirmed', 'Confirmed'), ('cancelled', 'Cancelled')])
 
     def __str__(self):
         return f"{self.member.user.username} - {self.date_time}"
@@ -146,12 +144,10 @@ class Notification(models.Model):
         return f"{self.user.username} - {self.type}"
 
 # Bảng tin nội bộ
-class InternalNews(models.Model):
+class InternalNews(BaseModel):
     author = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     content = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return self.title
