@@ -14,7 +14,7 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+MEDIA_URL = '/sports/static/users/'
 MEDIA_ROOT = '%s/sports/static/' % BASE_DIR
 
 # Quick-start development settings - unsuitable for production
@@ -85,7 +85,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'sportdb',
         'USER': 'root',
-        'PASSWORD': '123456',
+        'PASSWORD': 'Admin@123',
         'HOST': ''
     }
 }
