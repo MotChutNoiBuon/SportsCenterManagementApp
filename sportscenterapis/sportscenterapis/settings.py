@@ -34,7 +34,18 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 2,
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
+    ),
+    # 'DEFAULT_PERMISSION_CLASSES': (
+    #     'rest_framework.permissions.IsAuthenticated',
+    # )
+}
+CLIENT_ID = 'LMInXkXTRpviiIyZ2hQWhIs8hsb26ohoycbcCUPF'
+CLIENT_SECRET = 'pbkdf2_sha256$870000$Ua5mLPx4x5WvfXxsvqapXc$wEg/nSahdzjgt5HcEHT6KjFP9VcZIRZzkGB5uYCSsO4='
 # Application definition
 
 INSTALLED_APPS = [
@@ -45,16 +56,13 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'sportscenters.apps.SportscentersConfig',
-    'rest_framework',
     'ckeditor',
     'drf_yasg',
     'ckeditor_uploader',
-    'oauth2_provider'
+    'oauth2_provider',
+    'rest_framework',
+    'rest_framework.authtoken'
 ]
-REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 2
-}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -99,7 +107,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'sportscenterapis.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
@@ -108,13 +115,13 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'sportdb',
         'USER': 'root',
-        'PASSWORD': 'Admin@123',
+        'PASSWORD': '123456',
         'HOST': ''
     }
 }
-
-
+OAUTH2_PROVIDER = { 'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore' }
 import pymysql
+
 pymysql.install_as_MySQLdb()
 
 # Chi định lớp model đại diện cho 1 user, mặc định là auth.User
@@ -138,7 +145,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -149,7 +155,6 @@ TIME_ZONE = 'UTC'
 USE_I18N = True
 
 USE_TZ = True
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
