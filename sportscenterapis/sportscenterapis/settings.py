@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'sportscenters.apps.SportscentersConfig',
     'rest_framework',
+    'cloudinary',
+    'cloudinary_storage',
     'ckeditor',
     'drf_yasg',
     'ckeditor_uploader',
