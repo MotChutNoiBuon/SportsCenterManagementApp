@@ -1,9 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
+import cloudinary.models
 
-'''
-
-'''
 class BaseModel(models.Model):
     active = models.BooleanField(default=True)
     created_date = models.DateTimeField(auto_now_add=True)
@@ -22,24 +20,31 @@ class User(AbstractUser, BaseModel):
         ('member', 'Member'),
     ]
 
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='member')
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
-    avatar = models.ImageField(upload_to='users/%Y/%m', null=True, blank=True)
+    # avatar = models.ImageField(upload_to='users/%Y/%m', null=True, blank=True)
+    avatar = cloudinary.models.CloudinaryField('avatar', blank=True, null=True)
+    full_name = models.CharField(max_length=255, null=True)
+
 
     def __str__(self):
         return f"{self.username} - {self.role}"
 
 
 # Bảng hội viên
-class Member(BaseModel):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+class Member(User):
     payment_status = models.CharField(max_length=10, default='unpaid')
 
+
     def __str__(self):
-        return f"{self.user.username} - {self.membership_type}"
+        return f"{self.username} - {self.payment_status}"
+
+    class Meta:
+        verbose_name = 'Member'
+        verbose_name_plural = 'Members'
 
 # Bảng huấn luyện viên
-class Trainer(BaseModel):
+class Trainer(User):
     SPECIALIZATIONS = [
         ('gym', 'Gym'),
         ('yoga', 'Yoga'),
@@ -47,26 +52,34 @@ class Trainer(BaseModel):
         ('dance', 'Dance'),
     ]
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
     specialization = models.CharField(max_length=20, choices=SPECIALIZATIONS)
     experience_years = models.IntegerField()
 
+
     def __str__(self):
-        return f"{self.user.username} - {self.specialization}"
+        return f"{self.username} - {self.specialization} ({self.experience_years} years)"
+
+    class Meta:
+        verbose_name = 'Trainer'
+        verbose_name_plural = 'Trainers'
 
 # Bảng nhân viên lễ tân
-class Receptionist(BaseModel):
+class Receptionist(User):
     WORK_SHIFTS = [
         ('morning', 'Morning'),
         ('afternoon', 'Afternoon'),
         ('evening', 'Evening'),
     ]
 
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
     work_shift = models.CharField(max_length=10, choices=WORK_SHIFTS)
 
+
     def __str__(self):
-        return f"{self.user.username} - {self.work_shift}"
+        return f"{self.username} - {self.work_shift}"
+
+    class Meta:
+        verbose_name = 'Receptionist'
+        verbose_name_plural = 'Receptionists'
 
 # Bảng lớp học
 class Class(BaseModel):
@@ -81,6 +94,10 @@ class Class(BaseModel):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name = 'Class'
+        verbose_name_plural = 'Classes'
+
 # Bảng đăng ký lớp học
 class Enrollment(BaseModel):
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
@@ -88,7 +105,8 @@ class Enrollment(BaseModel):
     status = models.CharField(max_length=10, default='pending')
 
     def __str__(self):
-        return f"{self.member.user.username} - {self.gym_class.name}"
+        return f"{self.member.username} - {self.gym_class.name}"
+
 
 # Bảng tiến độ tập luyện
 class Progress(BaseModel):
@@ -99,7 +117,11 @@ class Progress(BaseModel):
 
 
     def __str__(self):
-        return f"{self.member.user.username} - {self.trainer.user.username}"
+        return f"{self.member.username} - {self.trainer.user.username}"
+
+    class Meta:
+        verbose_name = 'Progress'
+        verbose_name_plural = 'Progresses'
 
 # Bảng lịch tư vấn riêng
 class Appointment(BaseModel):
@@ -108,7 +130,7 @@ class Appointment(BaseModel):
     date_time = models.DateTimeField()
 
     def __str__(self):
-        return f"{self.member.user.username} - {self.date_time}"
+        return f"{self.member.username} - {self.date_time}"
 
 # Bảng thanh toán
 class Payment(models.Model):
@@ -126,7 +148,7 @@ class Payment(models.Model):
     date_paid = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.member.user.username} - {self.status}"
+        return f"{self.member.username} - {self.status}"
 
 # Bảng thông báo
 class Notification(models.Model):
@@ -136,20 +158,25 @@ class Notification(models.Model):
         ('reminder', 'Reminder'),
     ]
 
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    member = models.ForeignKey(Member, on_delete=models.CASCADE)
     message = models.TextField()
     type = models.CharField(max_length=20, choices=NOTIFICATION_TYPES)
     is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.username} - {self.type}"
+        return f"{self.member.username} - {self.type}"
 
 # Bảng tin nội bộ
 class InternalNews(BaseModel):
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    author = models.ForeignKey(Trainer, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     content = models.TextField()
 
     def __str__(self):
         return self.title
+
+
+    class Meta:
+        verbose_name = 'Internal News'
+        verbose_name_plural = 'Internal News'

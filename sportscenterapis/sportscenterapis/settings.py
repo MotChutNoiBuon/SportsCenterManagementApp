@@ -12,10 +12,13 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 
 from pathlib import Path
 
+import sportscenters.apps
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 MEDIA_URL = '/sports/static/users/'
 MEDIA_ROOT = '%s/sports/static/' % BASE_DIR
+CKEDITOR_UPLOAD_PATH = "uploads/"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -39,7 +42,11 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'sportscenters.apps.SportscentersConfig',
-    'rest_framework'
+    'rest_framework',
+    'ckeditor',
+    'drf_yasg',
+    'ckeditor_uploader',
+    'oauth2_provider'
 ]
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
