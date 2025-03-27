@@ -22,7 +22,6 @@ class User(AbstractUser, BaseModel):
 
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='member')
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
-    # avatar = models.ImageField(upload_to='users/%Y/%m', null=True, blank=True)
     avatar = cloudinary.models.CloudinaryField('avatar', blank=True, null=True)
     full_name = models.CharField(max_length=255, null=True)
 
@@ -54,7 +53,6 @@ class Trainer(User):
 
     specialization = models.CharField(max_length=20, choices=SPECIALIZATIONS)
     experience_years = models.IntegerField()
-
 
     def __str__(self):
         return f"{self.username} - {self.specialization} ({self.experience_years} years)"
@@ -117,7 +115,7 @@ class Progress(BaseModel):
 
 
     def __str__(self):
-        return f"{self.member.username} - {self.trainer.user.username}"
+        return f"{self.member.username} - {self.trainer.username}"
 
     class Meta:
         verbose_name = 'Progress'

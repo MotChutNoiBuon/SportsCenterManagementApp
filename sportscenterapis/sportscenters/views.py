@@ -1,9 +1,20 @@
-from rest_framework import viewsets, permissions
+from django_filters import filters
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import viewsets, permissions, filters
 from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.utils.timezone import now
-from .models import Class, Trainer, User
-from .serializers import ClassSerializer, TrainerSerializer, UserSerializer
+from oauth2_provider.contrib.rest_framework import OAuth2Authentication
+
+from .models import (
+    Class, Trainer, User, Progress, Member, Enrollment, Payment,
+    InternalNews, Appointment, Notification, Receptionist
+)
+from .serializers import (
+    ClassSerializer, TrainerSerializer, UserSerializer, NotificationSerializer, ReceptionistSerializer,
+    MemberSerializer, PaymentSerializer, ProgressSerializer, EnrollmentSerializer,
+    AppointmentSerializer, InternalNewsSerializer
+)
 
 class IsTrainerOrAdmin(permissions.BasePermission):
     """Chỉ Admin hoặc Huấn luyện viên của lớp mới có quyền chỉnh sửa."""
@@ -12,6 +23,8 @@ class IsTrainerOrAdmin(permissions.BasePermission):
 
 class ClassViewSet(viewsets.ModelViewSet):
     serializer_class = ClassSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
         """Hội viên chỉ thấy lớp `active`, Admin/Lễ tân thấy tất cả"""
@@ -79,9 +92,62 @@ class ClassViewSet(viewsets.ModelViewSet):
 class TrainerViewSet(viewsets.ModelViewSet):
     queryset = Trainer.objects.all()
     serializer_class = TrainerSerializer
+    authentication_classes = [OAuth2Authentication]
     permission_classes = [permissions.IsAuthenticated]
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+class MemberViewSet(viewsets.ModelViewSet):
+    queryset = Member.objects.all()
+    serializer_class = MemberSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter]
+    filterset_fields = ['payment_status']  # Lọc theo trạng thái thanh toán
+    search_fields = ['full_name', 'phone']  # Tìm kiếm theo tên hoặc số điện thoại
+
+class ReceptionistViewSet(viewsets.ModelViewSet):
+    queryset = Receptionist.objects.all()
+    serializer_class = ReceptionistSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+class EnrollmentViewSet(viewsets.ModelViewSet):
+    queryset = Enrollment.objects.all()
+    serializer_class = EnrollmentSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+class ProgressViewSet(viewsets.ModelViewSet):
+    queryset = Progress.objects.all()
+    serializer_class = ProgressSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+class AppointmentViewSet(viewsets.ModelViewSet):
+    queryset = Appointment.objects.all()
+    serializer_class = AppointmentSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+class PaymentViewSet(viewsets.ModelViewSet):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all()
+    serializer_class = NotificationSerializer
+    authentication_classes = [OAuth2Authentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+class InternalNewsViewSet(viewsets.ModelViewSet):
+    queryset = InternalNews.objects.all()
+    serializer_class = InternalNewsSerializer
+    authentication_classes = [OAuth2Authentication]
     permission_classes = [permissions.IsAuthenticated]

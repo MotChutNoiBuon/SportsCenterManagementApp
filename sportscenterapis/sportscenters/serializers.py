@@ -2,7 +2,7 @@ from django.contrib.auth.hashers import make_password, check_password
 from rest_framework.serializers import ModelSerializer
 from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
-from .models import Class, Trainer, User
+from .models import Class, Trainer, User, Progress,Receptionist,Payment,Member,Notification,Appointment,InternalNews,Enrollment
 
 class ClassSerializer(ModelSerializer):
     class Meta:
@@ -38,3 +38,44 @@ class UserSerializer(ModelSerializer):
                 validated_data['password'] = make_password(password)
 
         return super().update(instance, validated_data)
+
+
+class MemberSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Member
+        fields = '__all__'
+
+class ReceptionistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Receptionist
+        fields = '__all__'
+
+class EnrollmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Enrollment
+        fields = '__all__'
+
+class ProgressSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Progress
+        fields = '__all__'
+
+class AppointmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Appointment
+        fields = '__all__'
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = '__all__'
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = '__all__'
+
+class InternalNewsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InternalNews
+        fields = '__all__'

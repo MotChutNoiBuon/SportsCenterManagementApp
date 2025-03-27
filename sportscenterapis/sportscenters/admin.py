@@ -42,22 +42,31 @@ class ReceptionistInline(admin.StackedInline):
     extra = 1
 
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username', 'email', 'role', 'phone', 'is_active', 'avatar_view')
-    search_fields = ('username', 'email', 'phone')
+    list_display = ('id', 'username', 'full_name', 'email', 'role', 'phone', 'is_active', 'avatar_view')
+    search_fields = ('username', 'full_name', 'email', 'phone')
     list_filter = ('role', 'is_active')
-    readonly_fields = ['avatar_view']
+    readonly_fields = ['avatar_preview']  # Thêm avatar_preview vào readonly_fields
     list_editable = ('role', 'is_active')
+
     fieldsets = (
-        ('Thông tin tài khoản', {'fields': ('username', 'email', 'role', 'phone', 'avatar')}),
+        ('Thông tin tài khoản', {'fields': ('username', 'full_name', 'email', 'role', 'phone', 'avatar', 'avatar_preview')}),
         ('Trạng thái', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
     )
+
+    def avatar_preview(self, obj):
+        if obj.avatar and hasattr(obj.avatar, 'url'):
+            return mark_safe(f"<img src='{obj.avatar.url}' width='150' style='border-radius: 10px;' />")
+        return "No Image"
+
+    avatar_preview.short_description = "Avatar Preview"
+
     actions = ['activate_users']
     save_on_top = True
     form = UserForm
 
     def avatar_view(self, obj):
         if obj.avatar:
-            return mark_safe(f"<img src={obj.avatar.url} width='120' style='border-radius: 10px;' />")
+            return mark_safe(f"<img src={obj.avatar.url} width='120' style='border-radius: 10px;'/>")
         return "No Image"
     avatar_view.short_description = 'Avatar'
 
@@ -101,6 +110,8 @@ class ProgressAdmin(admin.ModelAdmin):
     list_display = ('member', 'trainer', 'gym_class')
     search_fields = ('member__full_name', 'trainer__full_name', 'gym_class__name')
     ordering = ['-created_date']
+
+
 
 class AppointmentAdmin(admin.ModelAdmin):
     list_display = ('member', 'trainer', 'date_time')
