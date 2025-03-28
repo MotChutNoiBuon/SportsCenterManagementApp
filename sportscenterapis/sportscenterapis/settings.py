@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'ckeditor_uploader',
     'oauth2_provider',
     'rest_framework',
+    'django_extensions',
     'rest_framework.authtoken'
 ]
 
@@ -115,11 +116,11 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'sportdb',
         'USER': 'root',
-        'PASSWORD': 'Admin@123',
+        'PASSWORD': '123456',
         'HOST': ''
     }
 }
-OAUTH2_PROVIDER = { 'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore' }
+OAUTH2_PROVIDER = {'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore'}
 import pymysql
 
 pymysql.install_as_MySQLdb()
