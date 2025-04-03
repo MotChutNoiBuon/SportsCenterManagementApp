@@ -40,10 +40,10 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     ),
-    # 'DEFAULT_PERMISSION_CLASSES': (
-    #     'rest_framework.permissions.IsAuthenticated',
-    # )
 }
+
+OAUTH2_PROVIDER = { 'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore' }
+
 CLIENT_ID = 'LMInXkXTRpviiIyZ2hQWhIs8hsb26ohoycbcCUPF'
 CLIENT_SECRET = 'pbkdf2_sha256$870000$Ua5mLPx4x5WvfXxsvqapXc$wEg/nSahdzjgt5HcEHT6KjFP9VcZIRZzkGB5uYCSsO4='
 # Application definition

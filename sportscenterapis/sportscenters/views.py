@@ -15,15 +15,14 @@ from .serializers import (
     MemberSerializer, PaymentSerializer, ProgressSerializer, EnrollmentSerializer,
     AppointmentSerializer, InternalNewsSerializer
 )
+from .perms import (
+    IsAdmin, IsTrainer, IsReceptionist, IsMember, IsTrainerOrAdmin,
+    CanManageClass, CanEnrollInClass, CanManagePayments, CanPostInternalNews
+)
 
-class IsTrainerOrAdmin(permissions.BasePermission):
-    """Chỉ Admin hoặc Huấn luyện viên của lớp mới có quyền chỉnh sửa."""
-    def has_object_permission(self, request, view, obj):
-        return request.user.is_staff or obj.trainer == request.user  # Huấn luyện viên chỉ chỉnh sửa lớp của họ
 
 class ClassViewSet(viewsets.ModelViewSet):
     serializer_class = ClassSerializer
-    authentication_classes = [OAuth2Authentication]
     permission_classes = [permissions.IsAuthenticated]
 
     def get_queryset(self):
@@ -35,7 +34,7 @@ class ClassViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         """Phân quyền API"""
         if self.action in ['create', 'update', 'partial_update']:
-            return [IsTrainerOrAdmin()]  # Admin & Huấn luyện viên được chỉnh sửa lớp của họ
+            return [CanManageClass()]  # Admin & Huấn luyện viên/Lễ tân được chỉnh sửa lớp
         elif self.action in ['destroy', 'restore']:
             return [permissions.IsAdminUser()]  # Chỉ Admin mới được xóa/khôi phục lớp
         return [permissions.IsAuthenticated()]  # Hội viên chỉ xem danh sách lớp
@@ -70,7 +69,7 @@ class ClassViewSet(viewsets.ModelViewSet):
         instance.save()
         return Response({"message": f"Lớp học '{instance.name}' đã được khôi phục."}, status=200)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[CanEnrollInClass])
     def enroll(self, request, pk=None):
         """Hội viên đăng ký vào lớp"""
         obj = self.get_object()
@@ -92,62 +91,61 @@ class ClassViewSet(viewsets.ModelViewSet):
 class TrainerViewSet(viewsets.ModelViewSet):
     queryset = Trainer.objects.all()
     serializer_class = TrainerSerializer
-    authentication_classes = [OAuth2Authentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsTrainer]  # Chỉ Huấn luyện viên mới có quyền truy cập
+
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    authentication_classes = [OAuth2Authentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [permissions.AllowAny]  # Cung cấp quyền truy cập công khai cho việc đăng ký và đăng nhập
+
 
 class MemberViewSet(viewsets.ModelViewSet):
     queryset = Member.objects.all()
     serializer_class = MemberSerializer
-    authentication_classes = [OAuth2Authentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsMember]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['payment_status']  # Lọc theo trạng thái thanh toán
     search_fields = ['full_name', 'phone']  # Tìm kiếm theo tên hoặc số điện thoại
 
+
 class ReceptionistViewSet(viewsets.ModelViewSet):
     queryset = Receptionist.objects.all()
     serializer_class = ReceptionistSerializer
-    authentication_classes = [OAuth2Authentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsReceptionist]  # Nhân viên lễ tân có quyền truy cập
+
 
 class EnrollmentViewSet(viewsets.ModelViewSet):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    authentication_classes = [OAuth2Authentication]
     permission_classes = [permissions.IsAuthenticated]
+
 
 class ProgressViewSet(viewsets.ModelViewSet):
     queryset = Progress.objects.all()
     serializer_class = ProgressSerializer
-    authentication_classes = [OAuth2Authentication]
     permission_classes = [permissions.IsAuthenticated]
+
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
-    authentication_classes = [OAuth2Authentication]
     permission_classes = [permissions.IsAuthenticated]
+
 
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
-    authentication_classes = [OAuth2Authentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [CanManagePayments]  # Admin hoặc lễ tân có quyền xử lý thanh toán
+
 
 class NotificationViewSet(viewsets.ModelViewSet):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
-    authentication_classes = [OAuth2Authentication]
     permission_classes = [permissions.IsAuthenticated]
+
 
 class InternalNewsViewSet(viewsets.ModelViewSet):
     queryset = InternalNews.objects.all()
     serializer_class = InternalNewsSerializer
-    authentication_classes = [OAuth2Authentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [CanPostInternalNews]  # Chỉ Admin hoặc Huấn luyện viên có thể đăng tin
