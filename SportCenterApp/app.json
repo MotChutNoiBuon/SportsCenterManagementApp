@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "SportCenterApp",
+    "slug": "SportCenterApp",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "backgroundColor": "#1E88E5",  
+    "splash": {
+      "resizeMode": "cover",  
+      "backgroundColor": "#1E88E5"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
+  }
+}
