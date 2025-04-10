@@ -49,7 +49,7 @@ class UserAdmin(admin.ModelAdmin):
     list_editable = ('role', 'is_active')
 
     fieldsets = (
-        ('Thông tin tài khoản', {'fields': ('username', 'full_name', 'email', 'role', 'phone', 'avatar', 'avatar_preview')}),
+        ('Thông tin tài khoản', {'fields': ('username', 'full_name','password', 'email', 'role', 'phone', 'avatar', 'avatar_preview')}),
         ('Trạng thái', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
     )
 
@@ -140,7 +140,6 @@ class InternalNewsAdmin(admin.ModelAdmin):
 
 admin.site = MyAdminSite(name='myadmin')
 
-admin.site.register(User, UserAdmin)
 admin.site.register(Member, MemberAdmin)
 admin.site.register(Trainer, TrainerAdmin)
 admin.site.register(Receptionist, ReceptionistAdmin)
