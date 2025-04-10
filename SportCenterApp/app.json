@@ -1,15 +1,16 @@
 {
   "expo": {
-    "name": "SportCenterApp",
-    "slug": "SportCenterApp",
+    "name": "ecoursemobileappv1",
+    "slug": "ecoursemobileappv1",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
-    "backgroundColor": "#1E88E5",  
     "splash": {
-      "resizeMode": "cover",  
-      "backgroundColor": "#1E88E5"
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
     },
     "ios": {
       "supportsTablet": true

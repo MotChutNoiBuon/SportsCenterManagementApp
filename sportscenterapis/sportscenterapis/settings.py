@@ -116,7 +116,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'sportdb',
         'USER': 'root',
-        'PASSWORD': '123456',
+        'PASSWORD': 'Admin@123',
         'HOST': ''
     }
 }

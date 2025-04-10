@@ -16,41 +16,90 @@ date_hierarchy: Thêm thanh filter theo ngày.
 
 readonly_fields: Chỉ cho phép xem một số trường.
 '''
+class UserForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput, required=False)
+
+    class Meta:
+        model = User
+        fields = '__all__'
+
+class BaseUserAdmin(admin.ModelAdmin):
+    form = UserForm
+
+    def save_model(self, request, obj, form, change):
+        password = form.cleaned_data.get('password')
+        if password:
+            if not password.startswith('pbkdf2_'):
+                obj.set_password(password)
+            else:
+                obj.password = password  # đã băm sẵn
+        super().save_model(request, obj, form, change)
 
 
 class MyAdminSite(admin.AdminSite):
     site_header = 'HỆ THỐNG QUẢN LÝ TRUNG TÂM THỂ DỤC THỂ THAO'
 
-class UserForm(forms.ModelForm):
-    class Meta:
-        model = User
-        fields = '__all__'
-
-class MemberInline(admin.StackedInline):
-    model = Member
-    can_delete = False
-    extra = 1  # Không hiển thị form trống mặc định
-
-class TrainerInline(admin.StackedInline):
-    model = Trainer
-    can_delete = False
-    extra = 1
-
-class ReceptionistInline(admin.StackedInline):
-    model = Receptionist
-    can_delete = False
-    extra = 1
-
-class UserAdmin(admin.ModelAdmin):
-    list_display = ('id', 'username', 'full_name', 'email', 'role', 'phone', 'is_active', 'avatar_view')
-    search_fields = ('username', 'full_name', 'email', 'phone')
-    list_filter = ('role', 'is_active')
-    readonly_fields = ['avatar_preview']  # Thêm avatar_preview vào readonly_fields
-    list_editable = ('role', 'is_active')
-
+class UserAdmin(BaseUserAdmin):
+    list_display = ('username', 'full_name', 'email', 'role', 'is_staff', 'is_superuser')
+    list_filter = ('is_staff', 'is_superuser', 'role')
+    search_fields = ('username', 'email', 'full_name')
+    ordering = ['-created_date']
+    readonly_fields = ['avatar_preview']
     fieldsets = (
-        ('Thông tin tài khoản', {'fields': ('username', 'full_name', 'email', 'role', 'phone', 'avatar', 'avatar_preview')}),
-        ('Trạng thái', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
+        ('Thông tin tài khoản', {
+            'fields': ('username', 'password', 'full_name', 'email', 'role', 'phone', 'avatar', 'avatar_preview')
+        }),
+        ('Quyền & Trạng thái', {
+            'fields': ('is_active',)
+        }),
+    )
+
+    def avatar_preview(self, obj):
+        if obj.avatar and hasattr(obj.avatar, 'url'):
+            return mark_safe(f"<img src='{obj.avatar.url}' width='150' style='border-radius: 10px;' />")
+        return "No Image"
+    avatar_preview.short_description = "Avatar Preview"
+
+class MemberAdmin(BaseUserAdmin):
+    list_display = ('full_name', 'payment_status', 'active','avatar_view')
+    list_filter = ('payment_status', 'active')
+    search_fields = ('full_name', 'payment_status')
+    ordering = ['-created_date']
+    readonly_fields = ['role','avatar_preview']
+    fieldsets = (
+        ('Thông tin tài khoản',
+         {'fields': ('username','password' ,'full_name', 'email', 'role', 'phone', 'avatar', 'avatar_preview')}),
+        ('Trạng thái', {'fields': ('is_active',)}),
+    )
+    def avatar_preview(self, obj):
+        if obj.avatar and hasattr(obj.avatar, 'url'):
+            return mark_safe(f"<img src='{obj.avatar.url}' width='150' style='border-radius: 10px;' />")
+        return "No Image"
+
+    avatar_preview.short_description = "Avatar Preview"
+
+    def avatar_view(self, obj):
+        if obj.avatar:
+            return mark_safe(f"<img src={obj.avatar.url} width='120' style='border-radius: 10px;'/>")
+        return "No Image"
+
+    avatar_view.short_description = 'Avatar'
+
+    @admin.action(description="Kích hoạt tài khoản đã chọn")
+    def activate_members(self, request, queryset):
+        queryset.update(is_active=True)
+
+
+class TrainerAdmin(BaseUserAdmin):
+    list_display = ('full_name', 'specialization', 'experience_years', 'active','avatar_view')
+    list_filter = ('specialization', 'active')
+    search_fields = ('full_name', 'email', 'specialization')
+    ordering = ['-created_date']
+    readonly_fields = ['role','avatar_preview']
+    fieldsets = (
+        ('Thông tin tài khoản',
+         {'fields': ('username', 'password', 'full_name', 'email', 'role','specialization', 'phone', 'avatar', 'avatar_preview')}),
+        ('Trạng thái', {'fields': ('is_active',)}),
     )
 
     def avatar_preview(self, obj):
@@ -59,46 +108,45 @@ class UserAdmin(admin.ModelAdmin):
         return "No Image"
 
     avatar_preview.short_description = "Avatar Preview"
-
-    actions = ['activate_users']
-    save_on_top = True
-    form = UserForm
-
     def avatar_view(self, obj):
         if obj.avatar:
             return mark_safe(f"<img src={obj.avatar.url} width='120' style='border-radius: 10px;'/>")
         return "No Image"
     avatar_view.short_description = 'Avatar'
 
-    @admin.action(description="Kích hoạt tài khoản đã chọn")
-    def activate_users(self, request, queryset):
-        queryset.update(is_active=True)
-
-class MemberAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'payment_status', 'active')
-    list_filter = ('payment_status', 'active')
-    search_fields = ('full_name', 'payment_status')
-    ordering = ['-created_date']
 
 
-class TrainerAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'specialization', 'experience_years', 'active')
-    list_filter = ('specialization', 'active')
-    search_fields = ('full_name', 'email', 'specialization')
-    ordering = ['-created_date']
-
-
-class ReceptionistAdmin(admin.ModelAdmin):
-    list_display = ('full_name', 'work_shift', 'active')
+class ReceptionistAdmin(BaseUserAdmin):
+    list_display = ('full_name', 'work_shift', 'active','avatar')
     list_filter = ('work_shift', 'active')
     search_fields = ('full_name', 'email', 'work_shift')
     ordering = ['-created_date']
+    readonly_fields = ['role','avatar_preview']
+    fieldsets = (
+        ('Thông tin tài khoản',
+         {'fields': ('username', 'password', 'full_name', 'email', 'role', 'phone', 'avatar', 'avatar_preview')}),
+        ('Trạng thái', {'fields': ('is_active',)}),
+    )
+    def avatar_preview(self, obj):
+        if obj.avatar and hasattr(obj.avatar, 'url'):
+            return mark_safe(f"<img src='{obj.avatar.url}' width='150' style='border-radius: 10px;' />")
+        return "No Image"
+
+    avatar_preview.short_description = "Avatar Preview"
+
+    def avatar_view(self, obj):
+        if obj.avatar:
+            return mark_safe(f"<img src={obj.avatar.url} width='120' style='border-radius: 10px;'/>")
+        return "No Image"
+
+    avatar_view.short_description = 'Avatar'
 
 class ClassAdmin(admin.ModelAdmin):
     list_display = ('name', 'trainer', 'schedule', 'status', 'price')
     list_filter = ('status', 'trainer')
     search_fields = ('name', 'trainer__full_name')
     ordering = ['-schedule']
+
 
 class EnrollmentAdmin(admin.ModelAdmin):
     list_display = ('member', 'gym_class', 'status', 'created_date')
