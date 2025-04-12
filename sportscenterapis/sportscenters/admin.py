@@ -46,6 +46,7 @@ class UserAdmin(BaseUserAdmin):
     ordering = ['-created_date']
     readonly_fields = ['avatar_preview']
     fieldsets = (
+<<<<<<< HEAD
         ('Thông tin tài khoản', {
             'fields': ('username', 'password', 'full_name', 'email', 'role', 'phone', 'avatar', 'avatar_preview')
         }),
@@ -100,6 +101,10 @@ class TrainerAdmin(BaseUserAdmin):
         ('Thông tin tài khoản',
          {'fields': ('username', 'password', 'full_name', 'email', 'role','specialization', 'phone', 'avatar', 'avatar_preview')}),
         ('Trạng thái', {'fields': ('is_active',)}),
+=======
+        ('Thông tin tài khoản', {'fields': ('username', 'full_name','password', 'email', 'role', 'phone', 'avatar', 'avatar_preview')}),
+        ('Trạng thái', {'fields': ('is_active', 'is_staff', 'is_superuser')}),
+>>>>>>> 6f85e8df233f81adf38983fb1d404e21cded9f29
     )
 
     def avatar_preview(self, obj):
@@ -188,7 +193,6 @@ class InternalNewsAdmin(admin.ModelAdmin):
 
 admin.site = MyAdminSite(name='myadmin')
 
-admin.site.register(User, UserAdmin)
 admin.site.register(Member, MemberAdmin)
 admin.site.register(Trainer, TrainerAdmin)
 admin.site.register(Receptionist, ReceptionistAdmin)

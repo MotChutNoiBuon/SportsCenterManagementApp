@@ -1,38 +1,35 @@
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { NavigationContainer } from "@react-navigation/native";
-import Home from "./components/Home/Home";
-import Login from "./components/User/Login";
-import { Icon } from "react-native-paper";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import Lesson from "./components/Home/Lesson";
+// App.js hoặc AppNavigator.js
+
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import WelcomeScreen from './screens/Auth/WelcomeScreen';
+import LoginScreen from './screens/Auth/LoginScreen';
+import RegisterScreen from './screens/Auth/RegisterScreen';
 
 const Stack = createNativeStackNavigator();
-const StackNavigator = () => {
-  return (
-    <Stack.Navigator screenOptions={{headerShown: false}}>
-      <Tab.Screen name="home" component={Home}  />
-      <Tab.Screen name="lesson" component={Lesson}  />
-    </Stack.Navigator>
-  );
-}
 
-const Tab = createBottomTabNavigator();
-
-const TabNavigator = () => {
-  return (
-    <Tab.Navigator>
-      <Tab.Screen name="index" component={StackNavigator} options={{tabBarIcon: () => <Icon source="home" size={20} />}}  />
-      <Tab.Screen name="login" component={Login} options={{tabBarIcon: () => <Icon source="account" size={20} />}} />
-    </Tab.Navigator>
-  );
-}
-
-const App = () => {
+export default function App() {
   return (
     <NavigationContainer>
-      <TabNavigator />
+      <Stack.Navigator initialRouteName="Welcome">
+        <Stack.Screen
+          name="Welcome"
+          component={WelcomeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{ title: 'Đăng nhập' }}
+        />
+        <Stack.Screen
+          name="Register"
+          component={RegisterScreen}
+          options={{ title: 'Đăng ký' }}
+        />
+      </Stack.Navigator>
     </NavigationContainer>
   );
 }
-
-export default App;

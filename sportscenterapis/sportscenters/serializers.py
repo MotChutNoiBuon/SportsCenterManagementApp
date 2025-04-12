@@ -25,19 +25,19 @@ class UserSerializer(ModelSerializer):
         }
 
     def create(self, validated_data):
-        """Hash password khi tạo mới user"""
-        validated_data['password'] = make_password(validated_data['password'])
-        return super().create(validated_data)
+        data = validated_data.copy()
+        u = User(**data)
+        u.set_password(u.password)
+        u.save()
+
+        return u
 
     def update(self, instance, validated_data):
-        """Chỉ hash password nếu nó chưa được mã hóa"""
-        password = validated_data.get('password')
+        if 'password' in validated_data:
+            instance.set_password(validated_data['password'])
+            instance.save()
 
-        if password:  # Nếu user gửi password mới
-            if not instance.password or not check_password(password, instance.password):
-                validated_data['password'] = make_password(password)
-
-        return super().update(instance, validated_data)
+        return instance
 
 
 class MemberSerializer(serializers.ModelSerializer):

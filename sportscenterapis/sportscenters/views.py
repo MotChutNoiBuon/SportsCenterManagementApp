@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import action
 from django.utils.timezone import now
 from oauth2_provider.contrib.rest_framework import OAuth2Authentication
-
+from sportscenters import paginators
 from .models import (
     Class, Trainer, User, Progress, Member, Enrollment, Payment,
     InternalNews, Appointment, Notification, Receptionist
@@ -24,6 +24,7 @@ from .perms import (
 class ClassViewSet(viewsets.ModelViewSet):
     serializer_class = ClassSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = paginators.StandardResultsSetPagination
 
     def get_queryset(self):
         """Hội viên chỉ thấy lớp `active`, Admin/Lễ tân thấy tất cả"""
@@ -92,12 +93,14 @@ class TrainerViewSet(viewsets.ModelViewSet):
     queryset = Trainer.objects.all()
     serializer_class = TrainerSerializer
     permission_classes = [IsTrainer]  # Chỉ Huấn luyện viên mới có quyền truy cập
+    pagination_class = paginators.StandardResultsSetPagination
 
 
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]  # Cung cấp quyền truy cập công khai cho việc đăng ký và đăng nhập
+    pagination_class = paginators.StandardResultsSetPagination
 
 
 class MemberViewSet(viewsets.ModelViewSet):
@@ -107,45 +110,52 @@ class MemberViewSet(viewsets.ModelViewSet):
     filter_backends = [DjangoFilterBackend, filters.SearchFilter]
     filterset_fields = ['payment_status']  # Lọc theo trạng thái thanh toán
     search_fields = ['full_name', 'phone']  # Tìm kiếm theo tên hoặc số điện thoại
+    pagination_class = paginators.StandardResultsSetPagination
 
 
 class ReceptionistViewSet(viewsets.ModelViewSet):
     queryset = Receptionist.objects.all()
     serializer_class = ReceptionistSerializer
     permission_classes = [IsReceptionist]  # Nhân viên lễ tân có quyền truy cập
+    pagination_class = paginators.StandardResultsSetPagination
 
 
 class EnrollmentViewSet(viewsets.ModelViewSet):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = paginators.StandardResultsSetPagination
 
 
 class ProgressViewSet(viewsets.ModelViewSet):
     queryset = Progress.objects.all()
     serializer_class = ProgressSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = paginators.StandardResultsSetPagination
 
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [permissions.IsAuthenticated]
-
+    pagination_class = paginators.StandardResultsSetPagination
 
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
     permission_classes = [CanManagePayments]  # Admin hoặc lễ tân có quyền xử lý thanh toán
+    pagination_class = paginators.StandardResultsSetPagination
 
 
 class NotificationViewSet(viewsets.ModelViewSet):
     queryset = Notification.objects.all()
     serializer_class = NotificationSerializer
     permission_classes = [permissions.IsAuthenticated]
+    pagination_class = paginators.StandardResultsSetPagination
 
 
 class InternalNewsViewSet(viewsets.ModelViewSet):
     queryset = InternalNews.objects.all()
     serializer_class = InternalNewsSerializer
     permission_classes = [CanPostInternalNews]  # Chỉ Admin hoặc Huấn luyện viên có thể đăng tin
+    pagination_class = paginators.StandardResultsSetPagination

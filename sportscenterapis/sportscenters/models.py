@@ -4,8 +4,13 @@ import cloudinary.models
 
 class BaseModel(models.Model):
     active = models.BooleanField(default=True)
+<<<<<<< HEAD
     created_date = models.DateTimeField(auto_now_add=True, null =True)
     updated_date = models.DateTimeField(auto_now=True, null =True)
+=======
+    created_date = models.DateTimeField(auto_now_add=True, null=True)
+    updated_date = models.DateTimeField(auto_now=True,  null=True)
+>>>>>>> 6f85e8df233f81adf38983fb1d404e21cded9f29
 
     class Meta:
         abstract = True
@@ -19,9 +24,16 @@ class User(AbstractUser):
         ('receptionist', 'Receptionist'),
         ('member', 'Member'),
     ]
+<<<<<<< HEAD
     active = models.BooleanField(default=True)
     created_date = models.DateTimeField(auto_now_add=True, null =True)
     updated_date = models.DateTimeField(auto_now=True, null =True)
+=======
+
+    active = models.BooleanField(default=True)
+    created_date = models.DateTimeField(auto_now_add=True, null=True)
+    updated_date = models.DateTimeField(auto_now=True, null=True)
+>>>>>>> 6f85e8df233f81adf38983fb1d404e21cded9f29
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='member')
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
     avatar = cloudinary.models.CloudinaryField('avatar', blank=True, null=True)
@@ -83,6 +95,7 @@ class Receptionist(User):
 
 # Bảng lớp học
 class Class(BaseModel):
+
     name = models.CharField(max_length=100)
     description = models.TextField()
     trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE)
@@ -90,6 +103,7 @@ class Class(BaseModel):
     max_members = models.IntegerField()
     status = models.CharField(max_length=20, choices=[('active', 'Active'), ('cancelled', 'Cancelled'), ('completed', 'Completed')])
     price = models.DecimalField(max_digits=10, decimal_places=2)
+
 
     def __str__(self):
         return self.name
