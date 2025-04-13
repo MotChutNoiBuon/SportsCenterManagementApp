@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 import cloudinary.models
+from django.utils import timezone
 
 class BaseModel(models.Model):
     active = models.BooleanField(default=True)
@@ -37,6 +38,13 @@ class User(AbstractUser):
 # Bảng hội viên
 class Member(User):
     payment_status = models.CharField(max_length=10, default='unpaid')
+    join_date = models.DateField(null=True, blank=True)
+    cancellation_date = models.DateField(null=True, blank=True)
+
+    def save(self, *args, **kwargs):
+        if not self.join_date and self.payment_status == 'paid':
+            self.join_date = timezone.now().date()
+        super().save(*args, **kwargs)
 
 
     def __str__(self):
@@ -184,3 +192,17 @@ class InternalNews(BaseModel):
     class Meta:
         verbose_name = 'Internal News'
         verbose_name_plural = 'Internal News'
+
+
+class Statistic(models.Model):
+    period_type = models.CharField(max_length=20, choices=[('weekly', 'Weekly'), ('monthly', 'Monthly'), ('yearly', 'Yearly')])
+    period_start = models.DateField()
+    period_end = models.DateField()
+    member_count = models.IntegerField(default=0)
+    new_members = models.IntegerField(default=0)
+    cancelled_members = models.IntegerField(default=0)
+    total_revenue = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    class_id = models.ForeignKey(Class, on_delete=models.CASCADE, null=True, blank=True)
+    enrollment_count = models.IntegerField(default=0)
+    attendance_rate = models.FloatField(default=0.0)
+    created_at = models.DateTimeField(auto_now_add=True)

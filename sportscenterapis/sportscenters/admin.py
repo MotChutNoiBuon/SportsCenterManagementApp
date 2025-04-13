@@ -1,7 +1,15 @@
 from django.contrib import admin
-from sportscenters.models import Trainer, Class, Payment, Enrollment, Progress, Appointment, InternalNews, Notification, User, Member, Receptionist
+from sportscenters.models import Trainer, Class, Payment, Enrollment, Progress, Appointment, InternalNews, Notification, User, Member, Receptionist, Statistic
 from django import forms
 from django.utils.safestring import mark_safe
+from django.http import HttpResponse
+import csv
+from django.shortcuts import render
+from django.urls import path
+from .views import StatisticViewSet
+from datetime import datetime, timedelta
+from django.utils import timezone
+
 
 '''
 list_display: Hiển thị các trường quan trọng.
@@ -38,6 +46,31 @@ class BaseUserAdmin(admin.ModelAdmin):
 
 class MyAdminSite(admin.AdminSite):
     site_header = 'HỆ THỐNG QUẢN LÝ TRUNG TÂM THỂ DỤC THỂ THAO'
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path('dashboard/', self.admin_view(self.dashboard_view), name='dashboard'),
+        ]
+        return custom_urls + urls
+
+    def dashboard_view(self, request):
+        viewset = StatisticViewSet()
+        start_date = timezone.now() - timedelta(days=365)
+        end_date = timezone.now()
+
+        # Lấy dữ liệu thống kê
+        member_stats = viewset.get_member_stats('monthly', start_date, end_date)
+        revenue_stats = viewset.get_revenue_stats('monthly', start_date, end_date)
+        class_stats = viewset.get_class_stats('monthly', start_date, end_date)
+
+        context = {
+            'site_header': self.site_header,
+            'member_stats': member_stats,
+            'revenue_stats': revenue_stats,
+            'class_stats': class_stats
+        }
+        return render(request, 'admin/dashboard.html', context)
 
 class UserAdmin(BaseUserAdmin):
     list_display = ('username', 'full_name', 'email', 'role', 'is_staff', 'is_superuser')
@@ -154,6 +187,24 @@ class EnrollmentAdmin(admin.ModelAdmin):
     list_filter = ('status', 'gym_class')
     search_fields = ('member__full_name', 'gym_class__name')
     ordering = ['-created_date']
+    actions = ['export_enrollments']
+
+    def export_enrollments(self, request, queryset):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="enrollments.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Member', 'Class', 'Status', 'Created Date'])
+        for enrollment in queryset:
+            writer.writerow([
+                enrollment.member.full_name,
+                enrollment.gym_class.name,
+                enrollment.status,
+                enrollment.created_date.date()
+            ])
+        return response
+
+    export_enrollments.short_description = "Export selected enrollments to CSV"
+
 
 class ProgressAdmin(admin.ModelAdmin):
     list_display = ('member', 'trainer', 'gym_class')
@@ -185,6 +236,27 @@ class InternalNewsAdmin(admin.ModelAdmin):
     search_fields = ('title', 'author__full_name')
     ordering = ['-created_date']
 
+class StatisticAdmin(admin.ModelAdmin):
+    list_display = ('period_type', 'period_start', 'period_end', 'member_count', 'total_revenue', 'attendance_rate')
+    list_filter = ('period_type',)
+    actions = ['export_stats']
+
+    def export_stats(self, request, queryset):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="stats.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Period Type', 'Start Date', 'End Date', 'Members', 'Revenue', 'Attendance Rate'])
+        for stat in queryset:
+            writer.writerow([
+                stat.period_type,
+                stat.period_start,
+                stat.period_end,
+                stat.member_count,
+                stat.total_revenue,
+                stat.attendance_rate
+            ])
+        return response
+    export_stats.short_description = "Export selected statistics to CSV"
 
 
 admin.site = MyAdminSite(name='myadmin')
@@ -199,3 +271,4 @@ admin.site.register(Appointment, AppointmentAdmin)
 admin.site.register(Payment, PaymentAdmin)
 admin.site.register(Notification, NotificationAdmin)
 admin.site.register(InternalNews, InternalNewsAdmin)
+admin.site.register(Statistic, StatisticAdmin)

@@ -1,0 +1,88 @@
+{% extends "admin/base_site.html" %}
+
+{% block title %}Dashboard - {{ site_header|default:_('Django administration') }}{% endblock %}
+
+{% block content %}
+<h1>Thống kê trung tâm thể dục thể thao</h1>
+<div style="width: 80%; margin: auto;">
+    <h2>Hội viên mới</h2>
+    <canvas id="memberChart"></canvas>
+    <h2>Doanh thu</h2>
+    <canvas id="revenueChart"></canvas>
+    <h2>Đăng ký lớp học</h2>
+    <canvas id="classChart"></canvas>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Biểu đồ hội viên
+    const memberStats = {{ member_stats|safe }};
+    const memberLabels = memberStats.map(item => item.period_start);
+    const memberData = memberStats.map(item => item.new_members);
+    const memberCtx = document.getElementById('memberChart').getContext('2d');
+    new Chart(memberCtx, {
+        type: 'line',
+        data: {
+            labels: memberLabels,
+            datasets: [{
+                label: 'Hội viên mới',
+                data: memberData,
+                borderColor: 'rgba(75, 192, 192, 1)',
+                fill: false
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // Biểu đồ doanh thu
+    const revenueStats = {{ revenue_stats|safe }};
+    const revenueLabels = revenueStats.map(item => item.period_start);
+    const revenueData = revenueStats.map(item => item.total_revenue);
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: revenueLabels,
+            datasets: [{
+                label: 'Doanh thu ($)',
+                data: revenueData,
+                borderColor: 'rgba(255, 99, 132, 1)',
+                fill: false
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+
+    // Biểu đồ lớp học
+    const classStats = {{ class_stats|safe }};
+    const classLabels = classStats.map(item => item.class_name);
+    const classData = classStats.map(item => item.total_enrollments);
+    const classCtx = document.getElementById('classChart').getContext('2d');
+    new Chart(classCtx, {
+        type: 'bar',
+        data: {
+            labels: classLabels,
+            datasets: [{
+                label: 'Số đăng ký',
+                data: classData,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
+{% endblock %}

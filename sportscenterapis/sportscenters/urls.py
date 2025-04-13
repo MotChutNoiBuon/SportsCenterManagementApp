@@ -14,6 +14,7 @@ router.register('appointments', views.AppointmentViewSet, basename='appointment'
 router.register('payments', views.PaymentViewSet, basename='payment')
 router.register('notifications', views.NotificationViewSet, basename='notification')
 router.register('internalnews', views.InternalNewsViewSet, basename='internalnews')
+router.register(r'stats', views.StatisticViewSet, basename='stats')
 
 urlpatterns = [
     path('', include(router.urls))

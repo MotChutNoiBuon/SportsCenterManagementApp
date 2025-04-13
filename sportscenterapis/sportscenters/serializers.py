@@ -2,7 +2,7 @@ from django.contrib.auth.hashers import make_password, check_password
 from rest_framework.serializers import ModelSerializer
 from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
-from .models import Class, Trainer, User, Progress,Receptionist,Payment,Member,Notification,Appointment,InternalNews,Enrollment
+from .models import Class, Trainer, User, Progress,Receptionist,Payment,Member,Notification,Appointment,InternalNews,Enrollment, Statistic
 
 class ClassSerializer(ModelSerializer):
     class Meta:
@@ -78,4 +78,9 @@ class NotificationSerializer(serializers.ModelSerializer):
 class InternalNewsSerializer(serializers.ModelSerializer):
     class Meta:
         model = InternalNews
+        fields = '__all__'
+
+class StatisticSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Statistic
         fields = '__all__'
