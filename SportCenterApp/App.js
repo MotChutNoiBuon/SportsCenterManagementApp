@@ -1,36 +1,35 @@
-import React, { useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createStackNavigator } from '@react-navigation/stack';
-import LoginScreen from './screens/LoginScreen';
-import HomeScreen from './screens/HomeScreen';
-import ClassDetailScreen from './screens/ClassDetailScreen';
-import { Provider as PaperProvider } from 'react-native-paper';
+// App.js hoặc AppNavigator.js
 
-const Stack = createStackNavigator();
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+
+import WelcomeScreen from './screens/Auth/WelcomeScreen';
+import LoginScreen from './screens/Auth/LoginScreen';
+import RegisterScreen from './screens/Auth/RegisterScreen';
+
+const Stack = createNativeStackNavigator();
 
 export default function App() {
-  const [accessToken, setAccessToken] = useState(null);
-
   return (
-    <PaperProvider>
-      <NavigationContainer>
-        <Stack.Navigator>
-          {!accessToken ? (
-            <Stack.Screen name="Login" options={{ headerShown: false }}>
-              {props => <LoginScreen {...props} setAccessToken={setAccessToken} />}
-            </Stack.Screen>
-          ) : (
-            <>
-              <Stack.Screen name="Home">
-                {props => <HomeScreen {...props} accessToken={accessToken} />}
-              </Stack.Screen>
-              <Stack.Screen name="ClassDetail">
-                {props => <ClassDetailScreen {...props} accessToken={accessToken} />}
-              </Stack.Screen>
-            </>
-          )}
-        </Stack.Navigator>
-      </NavigationContainer>
-    </PaperProvider>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Welcome">
+        <Stack.Screen
+          name="Welcome"
+          component={WelcomeScreen}
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="Login"
+          component={LoginScreen}
+          options={{ title: 'Đăng nhập' }}
+        />
+        <Stack.Screen
+          name="Register"
+          component={RegisterScreen}
+          options={{ title: 'Đăng ký' }}
+        />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }

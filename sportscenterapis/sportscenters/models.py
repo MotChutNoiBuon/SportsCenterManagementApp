@@ -4,8 +4,9 @@ import cloudinary.models
 
 class BaseModel(models.Model):
     active = models.BooleanField(default=True)
-    created_date = models.DateTimeField(auto_now_add=True, null=True)
-    updated_date = models.DateTimeField(auto_now=True,  null=True)
+    created_date = models.DateTimeField(auto_now_add=True, null =True)
+    updated_date = models.DateTimeField(auto_now=True, null =True)
+
 
     class Meta:
         abstract = True
@@ -21,8 +22,8 @@ class User(AbstractUser):
     ]
 
     active = models.BooleanField(default=True)
-    created_date = models.DateTimeField(auto_now_add=True, null=True)
-    updated_date = models.DateTimeField(auto_now=True, null=True)
+    created_date = models.DateTimeField(auto_now_add=True, null =True)
+    updated_date = models.DateTimeField(auto_now=True, null =True)
     role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='member')
     phone = models.CharField(max_length=15, unique=True, null=True, blank=True)
     avatar = cloudinary.models.CloudinaryField('avatar', blank=True, null=True)
@@ -54,8 +55,8 @@ class Trainer(User):
         ('dance', 'Dance'),
     ]
 
-    specialization = models.CharField(max_length=20, choices=SPECIALIZATIONS)
-    experience_years = models.IntegerField()
+    specialization = models.CharField(max_length=20, choices=SPECIALIZATIONS, null=True)
+    experience_years = models.IntegerField(null=True)
 
     def __str__(self):
         return f"{self.username} - {self.specialization} ({self.experience_years} years)"
