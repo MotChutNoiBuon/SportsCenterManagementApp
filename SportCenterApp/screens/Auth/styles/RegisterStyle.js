@@ -1,23 +1,18 @@
-// screens/Auth/styles/RegisterStyles.js
 import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
+    flexGrow: 1, // Quan trọng để ScrollView hoạt động đúng
+    justifyContent: 'flex-start',
     paddingHorizontal: 20,
     backgroundColor: '#fff',
+    paddingBottom: 40, // Đảm bảo nút không bị che
   },
   logo: {
     width: 120,
     height: 120,
     alignSelf: 'center',
     marginBottom: 20,
-  },
-  loginLink:{
-    textAlign: 'center',
-    color: '#007bff',
-    marginTop: 10,
   },
   title: {
     fontSize: 24,
@@ -26,23 +21,34 @@ export default StyleSheet.create({
     marginBottom: 20,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
     marginBottom: 15,
-    backgroundColor: '#f9f9f9',
   },
   button: {
     backgroundColor: '#007bff',
     paddingVertical: 12,
     borderRadius: 8,
-    marginBottom: 10,
+    marginBottom: 20,
   },
   buttonText: {
     color: '#fff',
     textAlign: 'center',
     fontWeight: 'bold',
+    fontSize: 16,
+  },
+  avatarContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 10,
+  },
+  avatarText: {
+    fontSize: 16,
+    color: '#007bff',
+    textDecorationLine: 'underline',
   },
   orText: {
     textAlign: 'center',

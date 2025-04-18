@@ -21,12 +21,7 @@ export default StyleSheet.create({
     marginBottom: 20,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 15,
-    backgroundColor: '#f9f9f9',
+    marginBottom: 10,
   },
   button: {
     backgroundColor: '#007bff',
