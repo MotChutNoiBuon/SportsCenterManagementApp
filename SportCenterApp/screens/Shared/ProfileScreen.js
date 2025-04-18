@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import { logout } from '../../api/authService';
 
 const ProfileScreen = ({ navigation }) => {
   const [user, setUser] = useState(null);
@@ -89,7 +90,7 @@ const ProfileScreen = ({ navigation }) => {
     }, 1000);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     Alert.alert(
       'Đăng xuất',
       'Bạn có chắc chắn muốn đăng xuất?',
@@ -100,8 +101,18 @@ const ProfileScreen = ({ navigation }) => {
         },
         {
           text: 'Đăng xuất',
-          onPress: () => navigation.navigate('Welcome'),
           style: 'destructive',
+          onPress: async () => {
+            try {
+              await logout(); // Gọi hàm logout từ authService
+              
+              // Điều hướng về Welcome mà không dùng reset
+              navigation.navigate('Welcome');
+            } catch (error) {
+              console.error('Lỗi khi đăng xuất:', error);
+              Alert.alert('Lỗi', 'Đã xảy ra lỗi khi đăng xuất. Vui lòng thử lại.');
+            }
+          },
         },
       ],
       { cancelable: true }

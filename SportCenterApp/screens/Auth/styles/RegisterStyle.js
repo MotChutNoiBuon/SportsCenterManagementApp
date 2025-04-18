@@ -3,9 +3,8 @@ import { StyleSheet } from 'react-native';
 
 export default StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
     paddingHorizontal: 20,
+    paddingVertical: 30,
     backgroundColor: '#fff',
   },
   logo: {
@@ -18,6 +17,7 @@ export default StyleSheet.create({
     textAlign: 'center',
     color: '#007bff',
     marginTop: 10,
+    marginBottom: 20,
   },
   title: {
     fontSize: 24,
@@ -26,10 +26,6 @@ export default StyleSheet.create({
     marginBottom: 20,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 8,
-    padding: 12,
     marginBottom: 15,
     backgroundColor: '#f9f9f9',
   },
@@ -73,5 +69,27 @@ export default StyleSheet.create({
     color: '#007bff',
     textAlign: 'center',
     marginTop: 10,
+  },
+  avatarContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 100,
+    marginVertical: 15,
+    backgroundColor: '#f0f0f0',
+    borderRadius: 8,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  avatar: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+  },
+  avatarText: {
+    color: '#666',
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 });

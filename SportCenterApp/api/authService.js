@@ -27,11 +27,13 @@ apiClient.interceptors.request.use(
 // Đăng ký tài khoản mới
 export const register = async (userData) => {
   try {
+    console.log('Bắt đầu đăng ký với dữ liệu:', userData);
+    
     // Đặt vai trò mặc định là 'member' cho khách hàng
     const userDataWithRole = {
       ...userData,
       role: 'member',
-      // Map dữ liệu từ form đăng ký sang model Django
+      // Map dữ liệu từ form đăng ký sang model API
       username: userData.username,
       password: userData.password,
       email: userData.email,
@@ -40,10 +42,34 @@ export const register = async (userData) => {
       full_name: `${userData.firstName} ${userData.lastName}`,
     };
 
+    // Thêm delay giả lập để dễ debug
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    console.log('Gửi yêu cầu đăng ký đến endpoint:', API_ENDPOINTS.register);
     const response = await apiClient.post(API_ENDPOINTS.register, userDataWithRole);
+    
+    console.log('Đăng ký thành công, phản hồi:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Đăng ký thất bại:', error.response?.data || error.message);
+    console.error('Đăng ký thất bại:', error);
+    
+    if (error.response) {
+      // Server trả về response với error status
+      console.error('Dữ liệu lỗi:', error.response.data);
+      console.error('Mã trạng thái:', error.response.status);
+    } else if (error.request) {
+      // Request đã được gửi nhưng không nhận được response
+      console.error('Không nhận được phản hồi từ server:', error.request);
+    } else {
+      // Lỗi thiết lập request
+      console.error('Lỗi thiết lập request:', error.message);
+    }
+    
+    // Xử lý đặc biệt cho trường hợp không kết nối được với server
+    if (!error.response) {
+      throw new Error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng của bạn.');
+    }
+    
     throw error;
   }
 };

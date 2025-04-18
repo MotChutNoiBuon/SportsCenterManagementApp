@@ -20,27 +20,27 @@ export const API_CONFIG = {
 // Đường dẫn API endpoints
 export const API_ENDPOINTS = {
   // Auth
-  register: '/sportscenters/members/',
-  login: '/o/token/',
-  users: '/sportscenters/users/',
+  register: '/api/auth/register',
+  login: '/api/auth/token/',
+  users: '/api/users/',
   // User
-  profile: '/sportscenters/users/me/',
+  profile: '/api/users/me/',
   // Classes
-  classes: '/sportscenters/classes/',
-  enrollments: '/sportscenters/enrollments/',
+  classes: '/api/classes/',
+  enrollments: '/api/enrollments/',
   // Progress
-  progress: '/sportscenters/progress/',
+  progress: '/api/progress/',
   // Appointments
-  appointments: '/sportscenters/appointments/',
+  appointments: '/api/appointments/',
   // Payments
-  payments: '/sportscenters/payments/',
+  payments: '/api/payments/',
   // Notifications
-  notifications: '/sportscenters/notifications/',
+  notifications: '/api/notifications/',
 };
 
 // Cấu hình client_id và client_secret cho OAuth2
 export const OAUTH2_CONFIG = {
-  client_id: 'LMInXkXTRpviiIyZ2hQWhIs8hsb26ohoycbcCUPF',  // Lấy từ settings.py
-  client_secret: 'pbkdf2_sha256$870000$Ua5mLPx4x5WvfXxsvqapXc$wEg/nSahdzjgt5HcEHT6KjFP9VcZIRZzkGB5uYCSsO4=', // Lấy từ settings.py
+  client_id: 'your_client_id',
+  client_secret: 'your_client_secret',
   grant_type: 'password',
 }; 
