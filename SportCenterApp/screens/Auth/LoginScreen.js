@@ -1,16 +1,43 @@
 // src/screens/Auth/LoginScreen.js
 
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import { login } from '../../api/authService';
 import styles from './styles/LoginStyle';
 
 export default function LoginScreen({ navigation }) {
-  const [username, setUsername] = useState('');  // Thay đổi tên state từ email thành username
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = () => {
-    // TODO: Gọi API đăng nhập hoặc xác thực OAuth2
-    console.log('Username:', username, 'Password:', password);  // Cập nhật ở đây để phù hợp với tên người dùng
+  const handleLogin = async () => {
+    if (!username || !password) {
+      Alert.alert('Thông báo', 'Vui lòng nhập đầy đủ thông tin đăng nhập');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const userProfile = await login(username, password);
+      
+      // Đăng nhập thành công, reset và chuyển tới Dashboard dựa vào vai trò
+      if (userProfile.role === 'member') {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: 'CustomerDashboard' }],
+        });
+      } else {
+        // Xử lý nếu không phải vai trò khách hàng (hiếm khi xảy ra do chúng ta chỉ đăng ký member)
+        Alert.alert('Thông báo', 'Tài khoản không có quyền truy cập.');
+      }
+    } catch (error) {
+      Alert.alert(
+        'Đăng nhập thất bại',
+        error.response?.data?.error_description || 'Sai tên đăng nhập hoặc mật khẩu'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -19,12 +46,12 @@ export default function LoginScreen({ navigation }) {
 
       <Text style={styles.title}>Đăng nhập</Text>
 
-      {/* Thay đổi từ Email thành Tên người dùng */}
       <TextInput
         style={styles.input}
         placeholder="Tên người dùng"  
         value={username} 
-        onChangeText={setUsername} 
+        onChangeText={setUsername}
+        autoCapitalize="none"
       />
 
       <TextInput
@@ -35,8 +62,16 @@ export default function LoginScreen({ navigation }) {
         secureTextEntry
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Đăng nhập</Text>
+      <TouchableOpacity 
+        style={[styles.button, isLoading && styles.disabledButton]} 
+        onPress={handleLogin}
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Đăng nhập</Text>
+        )}
       </TouchableOpacity>
 
       <Text style={styles.orText}>Hoặc đăng nhập bằng</Text>

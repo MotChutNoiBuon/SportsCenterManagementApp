@@ -1,25 +1,73 @@
 // src/screens/Auth/RegisterScreen.js
 
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { register } from '../../api/authService';
 import styles from './styles/RegisterStyle';
 
 export default function RegisterScreen({ navigation }) {
-  const [firstName, setFirstName] = useState('');  // Thêm state cho "Họ"
-  const [lastName, setLastName] = useState('');    // Thêm state cho "Tên"
-  const [username, setUsername] = useState('');    // Thêm state cho "Tên người dùng"
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [isRegistering, setIsRegistering] = useState(false);
 
-  const handleRegister = () => {
-    if (password !== confirmPassword) {
-      alert('Mật khẩu không khớp!');
+  const handleRegister = async () => {
+    // Kiểm tra các trường dữ liệu
+    if (!firstName || !lastName || !email || !username || !password) {
+      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
       return;
     }
-    // TODO: Gọi API tạo tài khoản
-    console.log({ firstName, lastName, username, email, password });
-    navigation.navigate('RoleSelection'); // chuyển qua màn chọn vai trò
+
+    if (password !== confirmPassword) {
+      Alert.alert('Lỗi', 'Mật khẩu không khớp!');
+      return;
+    }
+
+    try {
+      setIsRegistering(true);
+      
+      // Gọi API đăng ký
+      const userData = {
+        username,
+        password,
+        email,
+        firstName,
+        lastName,
+        phone: '',  // Có thể thêm trường số điện thoại vào form nếu cần
+      };
+      
+      await register(userData);
+      
+      // Đăng nhập ngay sau khi đăng ký
+      await AsyncStorage.setItem('userRole', 'member');
+      await AsyncStorage.setItem('isLoggedIn', 'true');
+      
+      // Lưu thông tin người dùng
+      await AsyncStorage.setItem('userData', JSON.stringify({
+        firstName,
+        lastName,
+        username,
+        email,
+        role: 'member',
+      }));
+      
+      // Đặt lại stack và chuyển trực tiếp đến CustomerDashboard
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'CustomerDashboard' }],
+      });
+    } catch (error) {
+      const errorMessage = error.response?.data?.detail || 
+                          'Đăng ký không thành công. Vui lòng thử lại sau.';
+      Alert.alert('Lỗi', errorMessage);
+      console.error(error);
+    } finally {
+      setIsRegistering(false);
+    }
   };
 
   return (
@@ -28,7 +76,6 @@ export default function RegisterScreen({ navigation }) {
 
       <Text style={styles.title}>Đăng ký</Text>
 
-      {/* Tách "Họ và tên" thành 2 ô: "Họ" và "Tên" */}
       <TextInput
         style={styles.input}
         placeholder="Họ"
@@ -47,6 +94,7 @@ export default function RegisterScreen({ navigation }) {
         value={email}
         onChangeText={setEmail}
         keyboardType="email-address"
+        autoCapitalize="none"
       />
      
       <TextInput
@@ -54,8 +102,8 @@ export default function RegisterScreen({ navigation }) {
         placeholder="Tên người dùng"
         value={username}
         onChangeText={setUsername}
+        autoCapitalize="none"
       />
-
       
       <TextInput
         style={styles.input}
@@ -72,8 +120,16 @@ export default function RegisterScreen({ navigation }) {
         onChangeText={setConfirmPassword}
       />
 
-      <TouchableOpacity style={styles.button} onPress={handleRegister}>
-        <Text style={styles.buttonText}>Đăng ký</Text>
+      <TouchableOpacity 
+        style={[styles.button, isRegistering && styles.disabledButton]} 
+        onPress={handleRegister}
+        disabled={isRegistering}
+      >
+        {isRegistering ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.buttonText}>Đăng ký</Text>
+        )}
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('Login')}>
