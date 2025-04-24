@@ -1,13 +1,15 @@
 // src/screens/Auth/LoginScreen.js
 
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import { TextInput } from 'react-native-paper';
 import { login } from '../../api/authService';
 import styles from './styles/LoginStyle';
 
 export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async () => {
@@ -19,15 +21,14 @@ export default function LoginScreen({ navigation }) {
     try {
       setIsLoading(true);
       const userProfile = await login(username, password);
-      
-      // Đăng nhập thành công, reset và chuyển tới Dashboard dựa vào vai trò
+
+      // Đăng nhập thành công, chuyển hướng dựa trên vai trò
       if (userProfile.role === 'member') {
         navigation.reset({
           index: 0,
           routes: [{ name: 'CustomerDashboard' }],
         });
       } else {
-        // Xử lý nếu không phải vai trò khách hàng (hiếm khi xảy ra do chúng ta chỉ đăng ký member)
         Alert.alert('Thông báo', 'Tài khoản không có quyền truy cập.');
       }
     } catch (error) {
@@ -43,32 +44,43 @@ export default function LoginScreen({ navigation }) {
   return (
     <View style={styles.container}>
       <Image source={require('../../assets/icon.png')} style={styles.logo} />
-
       <Text style={styles.title}>Đăng nhập</Text>
 
+      {/* Trường Tên người dùng */}
       <TextInput
-        style={styles.input}
-        placeholder="Tên người dùng"  
-        value={username} 
+        label="Tên người dùng"
+        value={username}
+        placeholder="VD: nguyenvana"
         onChangeText={setUsername}
+        mode="outlined"
+        style={styles.input}
         autoCapitalize="none"
       />
 
+      {/* Trường Mật khẩu */}
       <TextInput
-        style={styles.input}
-        placeholder="Mật khẩu"
+        label="Mật khẩu"
         value={password}
         onChangeText={setPassword}
-        secureTextEntry
+        secureTextEntry={!showPassword}
+        right={
+          <TextInput.Icon
+            icon={showPassword ? 'eye-off' : 'eye'}
+            onPress={() => setShowPassword(!showPassword)}
+          />
+        }
+        mode="outlined"
+        style={styles.input}
       />
 
-      <TouchableOpacity 
-        style={[styles.button, isLoading && styles.disabledButton]} 
+      {/* Nút Đăng nhập */}
+      <TouchableOpacity
+        style={[styles.button, isLoading && styles.disabledButton]}
         onPress={handleLogin}
         disabled={isLoading}
       >
         {isLoading ? (
-          <ActivityIndicator color="#fff" />
+          <ActivityIndicator size="small" color="#fff" />
         ) : (
           <Text style={styles.buttonText}>Đăng nhập</Text>
         )}
@@ -76,6 +88,7 @@ export default function LoginScreen({ navigation }) {
 
       <Text style={styles.orText}>Hoặc đăng nhập bằng</Text>
 
+      {/* Các nút đăng nhập với mạng xã hội */}
       <View style={styles.socialContainer}>
         <TouchableOpacity style={styles.socialButton}>
           <Image source={require('../../assets/google.png')} style={styles.icon} />
@@ -88,6 +101,7 @@ export default function LoginScreen({ navigation }) {
         </TouchableOpacity>
       </View>
 
+      {/* Liên kết tới màn hình đăng ký */}
       <TouchableOpacity onPress={() => navigation.navigate('Register')}>
         <Text style={styles.registerLink}>Chưa có tài khoản? Đăng ký</Text>
       </TouchableOpacity>
