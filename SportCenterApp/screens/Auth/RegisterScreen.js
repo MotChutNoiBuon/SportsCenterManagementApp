@@ -11,15 +11,16 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  SafeAreaView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { register } from '../../api/authService';
-import styles from './styles/RegisterStyle';
-
-// Đặt là true để sử dụng đăng ký giả lập khi backend chưa sẵn sàng
-const DEV_MODE = true;
+import { authStyles, theme } from '../../styles';
+import { DEV_MODE } from '../../api/apiConfig';
 
 export default function RegisterScreen({ navigation }) {
   const [firstName, setFirstName] = useState('');
@@ -32,6 +33,7 @@ export default function RegisterScreen({ navigation }) {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [avatar, setAvatar] = useState(null);
+  const [phone, setPhone] = useState('');
 
   // Hàm đăng ký giả lập cho chế độ phát triển
   const mockRegister = async (userData) => {
@@ -82,7 +84,7 @@ export default function RegisterScreen({ navigation }) {
         email,
         firstName,
         lastName,
-        phone: '',
+        phone,
         avatar, // Gửi URI ảnh đại diện nếu có
       };
 
@@ -98,34 +100,16 @@ export default function RegisterScreen({ navigation }) {
 
       console.log('Kết quả đăng ký:', result);
 
-      // Lưu thông tin vào AsyncStorage
-      await AsyncStorage.setItem('userRole', 'member');
-      await AsyncStorage.setItem('isLoggedIn', 'true');
-      await AsyncStorage.setItem(
-        'userData',
-        JSON.stringify({
-          firstName,
-          lastName,
-          username,
-          email,
-          role: 'member',
-          avatar,
-        })
-      );
-
       // Hiển thị thông báo thành công
       Alert.alert(
         'Đăng ký thành công', 
-        'Chào mừng bạn đến với ứng dụng Sport Center!',
+        'Vui lòng đăng nhập để tiếp tục!',
         [
           {
             text: 'OK',
             onPress: () => {
-              // Chuyển hướng đến CustomerDashboard
-              navigation.reset({
-                index: 0,
-                routes: [{ name: 'CustomerDashboard' }],
-              });
+              // Chuyển hướng đến LoginScreen
+              navigation.navigate('Login');
             }
           }
         ]
@@ -133,9 +117,9 @@ export default function RegisterScreen({ navigation }) {
     } catch (error) {
       console.error('Lỗi đăng ký:', error);
       const errorMessage = 
-        error?.response?.data?.detail || 
-        error?.message || 
-        'Đăng ký không thành công. Vui lòng thử lại sau.';
+        typeof error === 'object' && error.message
+          ? error.message
+          : 'Đăng ký không thành công. Vui lòng thử lại sau.';
         
       Alert.alert('Lỗi', errorMessage);
     } finally {
@@ -163,127 +147,144 @@ export default function RegisterScreen({ navigation }) {
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: '#fff' }}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
-    >
-      <ScrollView 
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <KeyboardAvoidingView
         style={{ flex: 1 }}
-        contentContainerStyle={styles.container}
-        showsVerticalScrollIndicator={true}
-        bounces={true}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
       >
-        <Image source={require('../../assets/icon.png')} style={styles.logo} />
-        <Text style={styles.title}>Đăng ký {DEV_MODE ? '(Dev Mode)' : ''}</Text>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView 
+            style={{ flex: 1 }}
+            contentContainerStyle={[authStyles.scrollContainer, { paddingBottom: 150 }]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={true}
+            bounces={true}
+          >
+            <Image source={require('../../assets/icon.png')} style={authStyles.logo} />
+            <Text style={authStyles.title}>Đăng ký {DEV_MODE ? '(Dev Mode)' : ''}</Text>
 
-        <TextInput
-          label="Họ"
-          value={firstName}
-          onChangeText={setFirstName}
-          mode="outlined"
-          style={styles.input}
-          placeholder="VD: Nguyễn"
-          placeholderTextColor="gray"
-          theme={{ colors: { background: '#f9f9f9' } }}
-        />
-
-        <TextInput
-          label="Tên"
-          value={lastName}
-          onChangeText={setLastName}
-          mode="outlined"
-          style={styles.input}
-          placeholder="VD: Văn A"
-          placeholderTextColor="gray"
-          theme={{ colors: { background: '#f9f9f9' } }}
-        />
-
-        <TextInput
-          label="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-          mode="outlined"
-          style={styles.input}
-          placeholder="VD: abc@gmail.com"
-          placeholderTextColor="gray"
-          theme={{ colors: { background: '#f9f9f9' } }}
-        />
-
-        <TextInput
-          label="Tên người dùng"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
-          mode="outlined"
-          style={styles.input}
-          placeholder="VD: nguyenvana"
-          placeholderTextColor="gray"
-          theme={{ colors: { background: '#f9f9f9' } }}
-        />
-
-        <TextInput
-          label="Mật khẩu"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          right={
-            <TextInput.Icon
-              icon={showPassword ? 'eye-off' : 'eye'}
-              onPress={() => setShowPassword(!showPassword)}
+            <TextInput
+              label="Họ"
+              value={firstName}
+              onChangeText={setFirstName}
+              mode="outlined"
+              style={authStyles.input}
+              placeholder="VD: Nguyễn"
+              placeholderTextColor="gray"
+              theme={{ colors: { background: theme.colors.background } }}
             />
-          }
-          mode="outlined"
-          style={styles.input}
-          placeholder="Nhập mật khẩu (ít nhất 6 ký tự)"
-          placeholderTextColor="gray"
-          theme={{ colors: { background: '#f9f9f9' } }}
-        />
 
-        <TextInput
-          label="Xác nhận mật khẩu"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry={!showConfirmPassword}
-          right={
-            <TextInput.Icon
-              icon={showConfirmPassword ? 'eye-off' : 'eye'}
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            <TextInput
+              label="Tên"
+              value={lastName}
+              onChangeText={setLastName}
+              mode="outlined"
+              style={authStyles.input}
+              placeholder="VD: Văn A"
+              placeholderTextColor="gray"
+              theme={{ colors: { background: theme.colors.background } }}
             />
-          }
-          mode="outlined"
-          style={styles.input}
-          placeholder="Nhập lại mật khẩu"
-          placeholderTextColor="gray"
-          theme={{ colors: { background: '#f9f9f9' } }}
-        />
 
-        <TouchableOpacity onPress={pickAvatar} style={styles.avatarContainer}>
-          {avatar ? (
-            <Image source={{ uri: avatar }} style={styles.avatar} />
-          ) : (
-            <Text style={styles.avatarText}>Chọn ảnh đại diện...</Text>
-          )}
-        </TouchableOpacity>
+            <TextInput
+              label="Email"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              mode="outlined"
+              style={authStyles.input}
+              placeholder="VD: abc@gmail.com"
+              placeholderTextColor="gray"
+              theme={{ colors: { background: theme.colors.background } }}
+            />
 
-        <TouchableOpacity
-          style={[styles.button, isRegistering && styles.disabledButton]}
-          onPress={handleRegister}
-          disabled={isRegistering}
-        >
-          {isRegistering ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Đăng ký</Text>
-          )}
-        </TouchableOpacity>
+            <TextInput
+              label="Số điện thoại"
+              value={phone}
+              onChangeText={setPhone}
+              keyboardType="phone-pad"
+              mode="outlined"
+              style={authStyles.input}
+              placeholder="VD: 0901234567"
+              placeholderTextColor="gray"
+              theme={{ colors: { background: theme.colors.background } }}
+            />
 
-        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.loginLink}>Đã có tài khoản? Đăng nhập</Text>
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <TextInput
+              label="Tên người dùng"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+              mode="outlined"
+              style={authStyles.input}
+              placeholder="VD: nguyenvana"
+              placeholderTextColor="gray"
+              theme={{ colors: { background: theme.colors.background } }}
+            />
+
+            <TextInput
+              label="Mật khẩu"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? 'eye-off' : 'eye'}
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+              }
+              mode="outlined"
+              style={authStyles.input}
+              placeholder="Nhập mật khẩu (ít nhất 6 ký tự)"
+              placeholderTextColor="gray"
+              theme={{ colors: { background: theme.colors.background } }}
+            />
+
+            <TextInput
+              label="Xác nhận mật khẩu"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry={!showConfirmPassword}
+              right={
+                <TextInput.Icon
+                  icon={showConfirmPassword ? 'eye-off' : 'eye'}
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                />
+              }
+              mode="outlined"
+              style={authStyles.input}
+              placeholder="Nhập lại mật khẩu"
+              placeholderTextColor="gray"
+              theme={{ colors: { background: theme.colors.background } }}
+            />
+
+            <TouchableOpacity onPress={pickAvatar} style={authStyles.avatarContainer}>
+              {avatar ? (
+                <Image source={{ uri: avatar }} style={authStyles.avatar} />
+              ) : (
+                <Text style={authStyles.avatarText}>Chọn ảnh đại diện...</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[authStyles.button, isRegistering && authStyles.disabledButton]}
+              onPress={handleRegister}
+              disabled={isRegistering}
+            >
+              {isRegistering ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={authStyles.buttonText}>Đăng ký</Text>
+              )}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={authStyles.loginLink}>Đã có tài khoản? Đăng nhập</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

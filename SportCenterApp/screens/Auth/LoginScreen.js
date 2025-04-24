@@ -1,10 +1,23 @@
 // src/screens/Auth/LoginScreen.js
 
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  Image, 
+  Alert, 
+  ActivityIndicator, 
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback
+} from 'react-native';
 import { TextInput } from 'react-native-paper';
 import { login } from '../../api/authService';
-import styles from './styles/LoginStyle';
+import { authStyles, theme } from '../../styles';
 
 export default function LoginScreen({ navigation }) {
   const [username, setUsername] = useState('');
@@ -42,69 +55,86 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Image source={require('../../assets/icon.png')} style={styles.logo} />
-      <Text style={styles.title}>Đăng nhập</Text>
-
-      {/* Trường Tên người dùng */}
-      <TextInput
-        label="Tên người dùng"
-        value={username}
-        placeholder="VD: nguyenvana"
-        onChangeText={setUsername}
-        mode="outlined"
-        style={styles.input}
-        autoCapitalize="none"
-      />
-
-      {/* Trường Mật khẩu */}
-      <TextInput
-        label="Mật khẩu"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry={!showPassword}
-        right={
-          <TextInput.Icon
-            icon={showPassword ? 'eye-off' : 'eye'}
-            onPress={() => setShowPassword(!showPassword)}
-          />
-        }
-        mode="outlined"
-        style={styles.input}
-      />
-
-      {/* Nút Đăng nhập */}
-      <TouchableOpacity
-        style={[styles.button, isLoading && styles.disabledButton]}
-        onPress={handleLogin}
-        disabled={isLoading}
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 80}
       >
-        {isLoading ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Đăng nhập</Text>
-        )}
-      </TouchableOpacity>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView 
+            style={{ flex: 1 }}
+            contentContainerStyle={[authStyles.scrollContainer, { paddingBottom: 120 }]}
+            keyboardShouldPersistTaps="handled" 
+            showsVerticalScrollIndicator={true}
+          >
+            <Image source={require('../../assets/icon.png')} style={authStyles.logo} />
+            <Text style={authStyles.title}>Đăng nhập</Text>
 
-      <Text style={styles.orText}>Hoặc đăng nhập bằng</Text>
+            {/* Trường Tên người dùng */}
+            <TextInput
+              label="Tên người dùng"
+              value={username}
+              placeholder="VD: nguyenvana"
+              onChangeText={setUsername}
+              mode="outlined"
+              style={authStyles.input}
+              autoCapitalize="none"
+              theme={{ colors: { background: theme.colors.background } }}
+            />
 
-      {/* Các nút đăng nhập với mạng xã hội */}
-      <View style={styles.socialContainer}>
-        <TouchableOpacity style={styles.socialButton}>
-          <Image source={require('../../assets/google.png')} style={styles.icon} />
-          <Text style={styles.socialText}>Google</Text>
-        </TouchableOpacity>
+            {/* Trường Mật khẩu */}
+            <TextInput
+              label="Mật khẩu"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? 'eye-off' : 'eye'}
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+              }
+              mode="outlined"
+              style={authStyles.input}
+              theme={{ colors: { background: theme.colors.background } }}
+            />
 
-        <TouchableOpacity style={styles.socialButton}>
-          <Image source={require('../../assets/facebook.png')} style={styles.icon} />
-          <Text style={styles.socialText}>Facebook</Text>
-        </TouchableOpacity>
-      </View>
+            {/* Nút Đăng nhập */}
+            <TouchableOpacity
+              style={[authStyles.button, isLoading && authStyles.disabledButton]}
+              onPress={handleLogin}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={authStyles.buttonText}>Đăng nhập</Text>
+              )}
+            </TouchableOpacity>
 
-      {/* Liên kết tới màn hình đăng ký */}
-      <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-        <Text style={styles.registerLink}>Chưa có tài khoản? Đăng ký</Text>
-      </TouchableOpacity>
-    </View>
+            <Text style={authStyles.orText}>Hoặc đăng nhập bằng</Text>
+
+            {/* Các nút đăng nhập với mạng xã hội */}
+            <View style={authStyles.socialContainer}>
+              <TouchableOpacity style={authStyles.socialButton}>
+                <Image source={require('../../assets/google.png')} style={authStyles.socialIcon} />
+                <Text style={authStyles.socialText}>Google</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity style={authStyles.socialButton}>
+                <Image source={require('../../assets/facebook.png')} style={authStyles.socialIcon} />
+                <Text style={authStyles.socialText}>Facebook</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Liên kết tới màn hình đăng ký */}
+            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <Text style={authStyles.registerLink}>Chưa có tài khoản? Đăng ký</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

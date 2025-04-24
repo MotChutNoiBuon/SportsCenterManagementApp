@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, Animated, Dimensions, ImageBackground } from 'react-native';
-import styles from './styles/WelcomeStyle';
+import { authStyles } from '../../styles';
 
 export default function WelcomeScreen({ navigation }) {
   const phrases = ['Chào mừng!', 'Hôm nay bạn thế nào?', 'Hãy đến với chúng tôi!'];
@@ -36,22 +36,22 @@ export default function WelcomeScreen({ navigation }) {
   return (
     <ImageBackground
       source={require('../../assets/background.png')} 
-      style={styles.background} 
+      style={authStyles.welcomeBackground} 
       resizeMode="cover"
     >
-      <View style={styles.container}>
-        <Image source={require('../../assets/icon.png')} style={styles.logo} />
+      <View style={authStyles.welcomeContainer}>
+        <Image source={require('../../assets/icon.png')} style={authStyles.logo} />
 
         <Animated.View style={{ transform: [{ translateX: slideAnim }] }}>
-          <Text style={styles.title}>{phrases[phraseIndex]}</Text>
+          <Text style={authStyles.title}>{phrases[phraseIndex]}</Text>
         </Animated.View>
 
-        <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Login')}>
-          <Text style={styles.buttonText}>Đăng nhập</Text>
+        <TouchableOpacity style={authStyles.welcomeButton} onPress={() => navigation.navigate('Login')}>
+          <Text style={authStyles.welcomeButtonText}>Đăng nhập</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={styles.buttonOutline} onPress={() => navigation.navigate('Register')}>
-          <Text style={styles.buttonOutlineText}>Bạn chưa có tài khoản?</Text>
+        <TouchableOpacity style={authStyles.welcomeButtonOutline} onPress={() => navigation.navigate('Register')}>
+          <Text style={authStyles.welcomeButtonOutlineText}>Bạn chưa có tài khoản?</Text>
         </TouchableOpacity>
       </View>
     </ImageBackground>

@@ -8,6 +8,7 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  timeout: 10000, // Thêm timeout 10 giây
 });
 
 // Interceptor để thêm token vào mỗi request
@@ -29,70 +30,87 @@ export const register = async (userData) => {
   try {
     console.log('Bắt đầu đăng ký với dữ liệu:', userData);
     
-    // Đặt vai trò mặc định là 'member' cho khách hàng
-    const userDataWithRole = {
-      ...userData,
-      role: 'member',
-      // Map dữ liệu từ form đăng ký sang model API
+    // Map dữ liệu từ form đăng ký sang model API
+    const userDataForApi = {
       username: userData.username,
       password: userData.password,
+      password2: userData.password, // Backend yêu cầu xác nhận mật khẩu
       email: userData.email,
       first_name: userData.firstName,
       last_name: userData.lastName,
-      full_name: `${userData.firstName} ${userData.lastName}`,
+      phone: userData.phone || '',
     };
 
-    // Thêm delay giả lập để dễ debug
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
     console.log('Gửi yêu cầu đăng ký đến endpoint:', API_ENDPOINTS.register);
-    const response = await apiClient.post(API_ENDPOINTS.register, userDataWithRole);
+    
+    // Sử dụng promise với timeout để tránh treo vô thời hạn
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Yêu cầu đã hết thời gian, vui lòng thử lại sau.')), 15000);
+    });
+    
+    const requestPromise = apiClient.post(API_ENDPOINTS.register, userDataForApi);
+    
+    // Lấy kết quả từ promise nào hoàn thành hoặc reject trước
+    const response = await Promise.race([requestPromise, timeoutPromise]);
     
     console.log('Đăng ký thành công, phản hồi:', response.data);
     return response.data;
   } catch (error) {
     console.error('Đăng ký thất bại:', error);
     
+    // Kiểm tra timeout
+    if (error.message && error.message.includes('timeout')) {
+      throw new Error('Yêu cầu đã hết thời gian, vui lòng thử lại sau.');
+    }
+    
+    // Kiểm tra nếu lỗi là timeout từ Promise.race
+    if (error.message === 'Yêu cầu đã hết thời gian, vui lòng thử lại sau.') {
+      throw error;
+    }
+    
     if (error.response) {
       // Server trả về response với error status
       console.error('Dữ liệu lỗi:', error.response.data);
       console.error('Mã trạng thái:', error.response.status);
+      
+      // Xử lý các mã lỗi cụ thể
+      if (error.response.status === 400) {
+        // Kiểm tra lỗi trùng username hoặc email
+        if (error.response.data.username) {
+          throw new Error('Tên người dùng đã tồn tại. Vui lòng chọn tên khác.');
+        }
+        if (error.response.data.email) {
+          throw new Error('Email đã được sử dụng. Vui lòng dùng email khác.');
+        }
+      } else if (error.response.status === 500) {
+        throw new Error('Lỗi máy chủ. Vui lòng thử lại sau.');
+      }
     } else if (error.request) {
       // Request đã được gửi nhưng không nhận được response
       console.error('Không nhận được phản hồi từ server:', error.request);
-    } else {
-      // Lỗi thiết lập request
-      console.error('Lỗi thiết lập request:', error.message);
+      throw new Error('Không nhận được phản hồi từ máy chủ. Vui lòng kiểm tra kết nối mạng và thử lại.');
     }
     
-    // Xử lý đặc biệt cho trường hợp không kết nối được với server
-    if (!error.response) {
-      throw new Error('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng của bạn.');
-    }
-    
-    throw error;
+    // Lỗi không xác định khác
+    throw error.message ? new Error(error.message) : new Error('Đăng ký không thành công. Vui lòng thử lại sau.');
   }
 };
 
 // Đăng nhập và lấy token
 export const login = async (username, password) => {
   try {
-    const formData = new FormData();
-    formData.append('username', username);
-    formData.append('password', password);
-    formData.append('client_id', OAUTH2_CONFIG.client_id);
-    formData.append('client_secret', OAUTH2_CONFIG.client_secret);
-    formData.append('grant_type', OAUTH2_CONFIG.grant_type);
+    const loginData = {
+      username: username,
+      password: password
+    };
 
-    const response = await axios.post(`${API_BASE_URL}${API_ENDPOINTS.login}`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    const response = await apiClient.post(API_ENDPOINTS.login, loginData);
+
+    console.log('Đăng nhập thành công, nhận được token:', response.data);
 
     // Lưu token vào AsyncStorage
-    await AsyncStorage.setItem('access_token', response.data.access_token);
-    await AsyncStorage.setItem('refresh_token', response.data.refresh_token);
+    await AsyncStorage.setItem('access_token', response.data.access);
+    await AsyncStorage.setItem('refresh_token', response.data.refresh);
     await AsyncStorage.setItem('isLoggedIn', 'true');
     
     // Lấy thông tin người dùng và lưu vào AsyncStorage
@@ -111,7 +129,7 @@ export const getUserProfile = async () => {
     const response = await apiClient.get(API_ENDPOINTS.profile);
     
     // Lưu thông tin người dùng vào AsyncStorage
-    await AsyncStorage.setItem('userRole', response.data.role);
+    await AsyncStorage.setItem('userRole', response.data.role || 'member');
     await AsyncStorage.setItem('userData', JSON.stringify(response.data));
     
     return response.data;
