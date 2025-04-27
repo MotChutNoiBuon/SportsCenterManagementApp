@@ -1,50 +1,96 @@
+// src/screens/Auth/RegisterScreen.js
+
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
-import styles from './styles/RegisterStyle';
+import { View, Text, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, SafeAreaView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
+import { register } from '../../api/authService';
+import { authStyles, theme } from '../../styles';
+import { DEV_MODE } from '../../api/apiConfig';
 
 export default function RegisterScreen({ navigation }) {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [first_name, setFirstName] = useState('');
+  const [last_name, setLastname] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);  // Trạng thái loading
   const [avatar, setAvatar] = useState(null);
+  const [phone, setPhone] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [errors, setErrors] = useState({});
 
-  const handleRegister = () => {
-    if (password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu không khớp!');
-      return;
+  const validate = () => {
+    const newErrors = {};
+    let isValid = true;
+
+    if (!first_name) {
+      newErrors.first_name = 'Vui lòng nhập họ';
+      isValid = false;
+    }
+    if (!last_name) {
+      newErrors.last_name = 'Vui lòng nhập tên';
+      isValid = false;
+    }
+    if (!email) {
+      newErrors.email = 'Vui lòng nhập email';
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      newErrors.email = 'Email không hợp lệ';
+      isValid = false;
+    }
+    if (!username) {
+      newErrors.username = 'Vui lòng nhập tên người dùng';
+      isValid = false;
+    }
+    if (!password || password.length < 6) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+      isValid = false;
+    }
+    if (confirmPassword !== password) {
+      newErrors.confirmPassword = 'Mật khẩu xác nhận không khớp';
+      isValid = false;
     }
 
-    setIsLoading(true);
+    setErrors(newErrors);
+    return isValid;
+  };
 
-    console.log({ firstName, lastName, username, email, password, avatar });
+  const handleRegister = async () => {
+    setErrorMsg('');
+    if (!validate()) return;
 
-    setTimeout(() => {
-      setIsLoading(false);
-      navigation.navigate('RoleSelection');
-    }, 2000);
+    try {
+      setIsRegistering(true);  // Bật trạng thái loading
+
+      const userData = { username, password, email, first_name, last_name, phone, avatar };
+
+      let result;
+      if (DEV_MODE) {
+        result = await mockRegister(userData);
+      } else {
+        result = await register(userData);
+      }
+
+      Alert.alert('Đăng ký thành công', 'Vui lòng đăng nhập để tiếp tục!', [{ text: 'OK', onPress: () => navigation.navigate('Login') }]);
+    } catch (error) {
+      setErrorMsg('Đăng ký không thành công. Vui lòng thử lại sau.');
+    } finally {
+      setIsRegistering(false);  // Tắt trạng thái loading
+    }
+  };
+
+  const mockRegister = async (userData) => {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(userData), 1500);
+    });
   };
 
   const pickAvatar = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
     if (status !== 'granted') {
       Alert.alert('Quyền truy cập bị từ chối', 'Bạn cần cho phép ứng dụng truy cập thư viện ảnh');
       return;
@@ -57,110 +103,53 @@ export default function RegisterScreen({ navigation }) {
       quality: 0.7,
     });
 
-    if (!result.canceled) {
-      setAvatar(result.assets[0].uri);
-    }
+    if (!result.canceled) setAvatar(result.assets[0].uri);
   };
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <ScrollView
-        contentContainerStyle={styles.container}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Image source={require('../../assets/icon.png')} style={styles.logo} />
-        <Text style={styles.title}>Đăng ký</Text>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <ScrollView contentContainerStyle={[authStyles.scrollContainer, { paddingBottom: 150 }]} keyboardShouldPersistTaps="handled">
+            <Image source={require('../../assets/icon.png')} style={authStyles.logo} />
+            <Text style={authStyles.title}>Đăng ký {DEV_MODE ? '(Dev Mode)' : ''}</Text>
 
-        <TextInput
-          label="Họ"
-          value={firstName}
-          placeholder="VD: Thạch"
-          onChangeText={setFirstName}
-          mode="outlined"
-          style={styles.input}
-        />
+            {errorMsg && <Text style={authStyles.errorText}>{errorMsg}</Text>}
 
-        <TextInput
-          label="Tên"
-          value={lastName}
-          placeholder="VD: Gia Kiệt"
-          onChangeText={setLastName}
-          mode="outlined"
-          style={styles.input}
-        />
+            <TextInput label="Họ" value={first_name} onChangeText={setFirstName} mode="outlined" style={authStyles.input} placeholder="VD: Nguyễn" error={!!errors.first_name} />
+            {errors.first_name && <Text style={authStyles.fieldError}>{errors.first_name}</Text>}
 
-        <TextInput
-          label="Email"
-          value={email}
-          placeholder="VD: abc@gmail.com"
-          onChangeText={setEmail}
-          mode="outlined"
-          style={styles.input}
-          keyboardType="email-address"
-        />
+            <TextInput label="Tên" value={last_name} onChangeText={setLastname} mode="outlined" style={authStyles.input} placeholder="VD: Văn A" error={!!errors.last_name} />
+            {errors.last_name && <Text style={authStyles.fieldError}>{errors.last_name}</Text>}
 
-        <TextInput
-          label="Tên người dùng"
-          value={username}
-          placeholder="VD: nguyenvana"
-          onChangeText={setUsername}
-          mode="outlined"
-          style={styles.input}
-        />
+            <TextInput label="Email" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" mode="outlined" style={authStyles.input} placeholder="VD: abc@gmail.com" error={!!errors.email} />
+            {errors.email && <Text style={authStyles.fieldError}>{errors.email}</Text>}
 
-        <TextInput
-          label="Mật khẩu"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          right={
-            <TextInput.Icon
-              icon={showPassword ? 'eye-off' : 'eye'}
-              onPress={() => setShowPassword(!showPassword)}
-            />
-          }
-          mode="outlined"
-          style={styles.input}
-        />
+            <TextInput label="Số điện thoại" value={phone} onChangeText={setPhone} keyboardType="phone-pad" mode="outlined" style={authStyles.input} placeholder="VD: 0901234567" />
 
-        <TextInput
-          label="Xác nhận mật khẩu"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry={!showConfirmPassword}
-          right={
-            <TextInput.Icon
-              icon={showConfirmPassword ? 'eye-off' : 'eye'}
-              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-            />
-          }
-          mode="outlined"
-          style={styles.input}
-        />
+            <TextInput label="Tên người dùng" value={username} onChangeText={setUsername} autoCapitalize="none" mode="outlined" style={authStyles.input} placeholder="VD: nguyenvana" error={!!errors.username} />
+            {errors.username && <Text style={authStyles.fieldError}>{errors.username}</Text>}
 
-        <TouchableOpacity onPress={pickAvatar} style={styles.avatarContainer}>
-          {avatar ? (
-            <Image source={{ uri: avatar }} style={styles.avatar} />
-          ) : (
-            <Text style={styles.avatarText}>Chọn ảnh đại diện...</Text>
-          )}
-        </TouchableOpacity>
+            <TextInput label="Mật khẩu" value={password} onChangeText={setPassword} secureTextEntry={!showPassword} right={<TextInput.Icon icon={showPassword ? 'eye-off' : 'eye'} onPress={() => setShowPassword(!showPassword)} />} mode="outlined" style={authStyles.input} placeholder="Nhập mật khẩu" error={!!errors.password} />
+            {errors.password && <Text style={authStyles.fieldError}>{errors.password}</Text>}
 
-        <TouchableOpacity
-          style={styles.button}
-          onPress={handleRegister}
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Đăng ký</Text>
-          )}
-        </TouchableOpacity>
-      </ScrollView>
-    </KeyboardAvoidingView>
+            <TextInput label="Xác nhận mật khẩu" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={!showConfirmPassword} right={<TextInput.Icon icon={showConfirmPassword ? 'eye-off' : 'eye'} onPress={() => setShowConfirmPassword(!showConfirmPassword)} />} mode="outlined" style={authStyles.input} placeholder="Nhập lại mật khẩu" error={!!errors.confirmPassword} />
+            {errors.confirmPassword && <Text style={authStyles.fieldError}>{errors.confirmPassword}</Text>}
+
+            <TouchableOpacity onPress={pickAvatar} style={authStyles.avatarContainer}>
+              {avatar ? <Image source={{ uri: avatar }} style={authStyles.avatar} /> : <Text style={authStyles.avatarText}>Chọn ảnh đại diện...</Text>}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[authStyles.button, isRegistering && authStyles.disabledButton]} onPress={handleRegister} disabled={isRegistering}>
+              {isRegistering ? <ActivityIndicator size="small" color="#fff" /> : <Text style={authStyles.buttonText}>Đăng ký</Text>}
+            </TouchableOpacity>
+
+            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+              <Text style={authStyles.loginLink}>Đã có tài khoản? Đăng nhập</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </TouchableWithoutFeedback>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }

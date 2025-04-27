@@ -32,8 +32,6 @@ SECRET_KEY = 'django-insecure-1kmf*mbweh)9#qp7#m_$1_ij+6)f26pvr0^t$8z)r73(vc$+y%
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
-
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 2,
@@ -58,6 +56,7 @@ INSTALLED_APPS = [
     'sportscenters.apps.SportscentersConfig',
     'ckeditor',
     'drf_yasg',
+    'corsheaders',
     'ckeditor_uploader',
     'oauth2_provider',
     'rest_framework',
@@ -73,7 +72,10 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
+
 ]
+CORS_ALLOW_ALL_ORIGINS = True
 
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': 'dfgnoyf71',
@@ -173,3 +175,11 @@ CACHES = {
         'LOCATION': 'unique-snowflake',
     }
 }
+
+
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = [
+    'http://10.0.2.2:8000',
+    'http://192.168.2.16:8000',
+]
+ALLOWED_HOSTS = ['192.168.2.16', 'localhost', '127.0.0.1','10.0.2.2']
