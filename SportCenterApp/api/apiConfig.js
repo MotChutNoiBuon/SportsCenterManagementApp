@@ -3,9 +3,7 @@
 // Thay đổi URL theo máy chủ backend của bạn
 // Nếu chạy trên thiết bị thật, sử dụng IP máy chủ thật
 // Nếu chạy trên emulator, sử dụng 10.0.2.2 (Android) hoặc localhost (iOS)
-
-// API_BASE_URL được sử dụng làm địa chỉ mặc định
-export const API_BASE_URL = 'http://localhost:8000'; // Thay đổi tùy theo môi trường
+export const API_BASE_URL = 'http://10.0.2.2:8000';  // Mặc định cho Android Emulator
 
 // Sử dụng DEV_API để kiểm tra nếu backend không có sẵn
 export const DEV_MODE = true;
@@ -43,9 +41,9 @@ export const API_ENDPOINTS = {
   notifications: '/api/notifications/',
 };
 
-// Cấu hình OAuth2 (Nếu sử dụng JWT, có thể bỏ qua phần này)
+// Cấu hình OAuth2 (client credentials)
 export const OAUTH2_CONFIG = {
-  client_id: 'sportscenter',
+  client_id: 'HxQDtnxYJjTkdRcsicafPK9QqclTYaU8l1CxOQLQ',
   client_secret: 'sportscenter2024',
   grant_type: 'password',
 }; 

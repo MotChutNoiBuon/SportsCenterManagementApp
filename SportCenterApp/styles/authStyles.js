@@ -184,6 +184,23 @@ const authStyles = StyleSheet.create({
     color: theme.colors.primary,
     marginTop: theme.spacing.sm,
   },
+  
+  // Styles cho thông báo lỗi chung
+  errorText: {
+    color: '#d32f2f',
+    marginBottom: 15,
+    textAlign: 'center',
+    fontSize: 14,
+  },
+  
+  // Styles cho lỗi từng trường
+  fieldError: {
+    color: '#d32f2f',
+    fontSize: 12,
+    marginTop: -8,
+    marginBottom: 8,
+    marginLeft: 8,
+  },
 });
 
 export default authStyles; 

@@ -1,9 +1,11 @@
 // App.js hoặc AppNavigator.js
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Import UserProvider
+import { UserProvider, useUser } from './contexts/UserContext';
 
 // Auth Screens
 import WelcomeScreen from './screens/Auth/WelcomeScreen';
@@ -26,29 +28,9 @@ import ClassDetails from './screens/Shared/ClassDetails';
 
 const Stack = createNativeStackNavigator();
 
-export default function App() {
-  const [userRole, setUserRole] = useState(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-
-  // Check if user is logged in from AsyncStorage
-  useEffect(() => {
-    const checkLoginState = async () => {
-      try {
-        const loginStatus = await AsyncStorage.getItem('isLoggedIn');
-        const storedUserRole = await AsyncStorage.getItem('userRole');
-        
-        setIsLoggedIn(loginStatus === 'true');
-        setUserRole(storedUserRole);
-      } catch (error) {
-        console.error('Error checking authentication state:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkLoginState();
-  }, []);
+// Tạo component AppNavigator riêng để sử dụng useUser hook
+const AppNavigator = () => {
+  const { isLoggedIn, userRole, isLoading } = useUser();
 
   if (isLoading) {
     // You could return a loading screen here
@@ -90,7 +72,7 @@ export default function App() {
           // Trainer Screens (was 'coach')
           <>
             <Stack.Screen
-              name="CoachDashboard"
+              name="TrainerDashboard"
               component={CoachDashboard}
               options={{ headerShown: false }}
             />
@@ -108,7 +90,7 @@ export default function App() {
           // Receptionist Screens - thêm màn hình cho receptionist
           <>
             <Stack.Screen
-              name="AdminDashboard" // Có thể sử dụng chung màn hình của admin hoặc tạo màn hình riêng
+              name="ReceptionistDashboard" // Có thể sử dụng chung màn hình của admin hoặc tạo màn hình riêng
               component={AdminDashboard}
               options={{ headerShown: false }}
             />
@@ -145,5 +127,14 @@ export default function App() {
         )} */}
       </Stack.Navigator>
     </NavigationContainer>
+  );
+}
+
+// Wrap AppNavigator with UserProvider
+export default function App() {
+  return (
+    <UserProvider>
+      <AppNavigator />
+    </UserProvider>
   );
 }

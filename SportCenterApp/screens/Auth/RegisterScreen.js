@@ -34,6 +34,8 @@ export default function RegisterScreen({ navigation }) {
   const [isRegistering, setIsRegistering] = useState(false);
   const [avatar, setAvatar] = useState(null);
   const [phone, setPhone] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
+  const [errors, setErrors] = useState({});
 
   // Hàm đăng ký giả lập cho chế độ phát triển
   const mockRegister = async (userData) => {
@@ -51,27 +53,63 @@ export default function RegisterScreen({ navigation }) {
     });
   };
 
+  // Kiểm tra hợp lệ của form
+  const validate = () => {
+    const newErrors = {};
+    let isValid = true;
+
+    if (!firstName) {
+      newErrors.firstName = 'Vui lòng nhập họ';
+      isValid = false;
+    }
+
+    if (!lastName) {
+      newErrors.lastName = 'Vui lòng nhập tên';
+      isValid = false;
+    }
+
+    if (!email) {
+      newErrors.email = 'Vui lòng nhập email';
+      isValid = false;
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        newErrors.email = 'Email không hợp lệ';
+        isValid = false;
+      }
+    }
+
+    if (!username) {
+      newErrors.username = 'Vui lòng nhập tên người dùng';
+      isValid = false;
+    }
+
+    if (!password) {
+      newErrors.password = 'Vui lòng nhập mật khẩu';
+      isValid = false;
+    } else if (password.length < 6) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+      isValid = false;
+    }
+
+    if (!confirmPassword) {
+      newErrors.confirmPassword = 'Vui lòng xác nhận mật khẩu';
+      isValid = false;
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = 'Mật khẩu không khớp';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const handleRegister = async () => {
-    if (!firstName || !lastName || !email || !username || !password) {
-      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin');
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu không khớp!');
-      return;
-    }
+    // Xóa thông báo lỗi cũ
+    setErrorMsg('');
     
-    // Kiểm tra định dạng email
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Lỗi', 'Email không hợp lệ');
-      return;
-    }
-
-    // Kiểm tra độ dài mật khẩu
-    if (password.length < 6) {
-      Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
+    // Kiểm tra hợp lệ
+    if (!validate()) {
       return;
     }
 
@@ -85,7 +123,7 @@ export default function RegisterScreen({ navigation }) {
         firstName,
         lastName,
         phone,
-        avatar, // Gửi URI ảnh đại diện nếu có
+        avatar,
       };
 
       let result;
@@ -116,12 +154,45 @@ export default function RegisterScreen({ navigation }) {
       );
     } catch (error) {
       console.error('Lỗi đăng ký:', error);
-      const errorMessage = 
-        typeof error === 'object' && error.message
-          ? error.message
-          : 'Đăng ký không thành công. Vui lòng thử lại sau.';
+      
+      // Xử lý lỗi dựa trên phản hồi từ server
+      if (error.response && error.response.data) {
+        const serverErrors = error.response.data;
         
-      Alert.alert('Lỗi', errorMessage);
+        // Kiểm tra lỗi cụ thể từ server và gán vào các trường tương ứng
+        const fieldErrors = {};
+        
+        if (typeof serverErrors === 'object') {
+          // Xử lý lỗi dạng object
+          Object.keys(serverErrors).forEach(key => {
+            if (key === 'username') fieldErrors.username = serverErrors[key][0];
+            else if (key === 'email') fieldErrors.email = serverErrors[key][0];
+            else if (key === 'password') fieldErrors.password = serverErrors[key][0];
+            else if (key === 'detail') setErrorMsg(serverErrors[key]);
+            else if (Array.isArray(serverErrors[key])) {
+              fieldErrors[key] = serverErrors[key][0];
+            } else {
+              fieldErrors[key] = serverErrors[key];
+            }
+          });
+          
+          if (Object.keys(fieldErrors).length > 0) {
+            setErrors(fieldErrors);
+          } else {
+            // Nếu không tìm thấy lỗi cụ thể, hiển thị thông báo chung
+            setErrorMsg('Đăng ký không thành công. Vui lòng kiểm tra lại thông tin.');
+          }
+        } else if (typeof serverErrors === 'string') {
+          // Xử lý lỗi dạng string
+          setErrorMsg(serverErrors);
+        }
+      } else if (error.message) {
+        // Xử lý lỗi network hoặc lỗi khác
+        setErrorMsg(error.message);
+      } else {
+        // Lỗi không xác định
+        setErrorMsg('Đăng ký không thành công. Vui lòng thử lại sau.');
+      }
     } finally {
       setIsRegistering(false);
     }
@@ -146,6 +217,30 @@ export default function RegisterScreen({ navigation }) {
     }
   };
 
+  // Xử lý khi nhập giá trị để xóa lỗi
+  const handleInputChange = (field, value) => {
+    // Cập nhật giá trị
+    switch (field) {
+      case 'firstName': setFirstName(value); break;
+      case 'lastName': setLastName(value); break;
+      case 'email': setEmail(value); break;
+      case 'username': setUsername(value); break;
+      case 'phone': setPhone(value); break;
+      case 'password': setPassword(value); break;
+      case 'confirmPassword': setConfirmPassword(value); break;
+    }
+    
+    // Xóa lỗi cho trường đó
+    if (errors[field]) {
+      setErrors({ ...errors, [field]: '' });
+    }
+    
+    // Xóa thông báo lỗi chung
+    if (errorMsg) {
+      setErrorMsg('');
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <KeyboardAvoidingView
@@ -163,33 +258,46 @@ export default function RegisterScreen({ navigation }) {
           >
             <Image source={require('../../assets/icon.png')} style={authStyles.logo} />
             <Text style={authStyles.title}>Đăng ký {DEV_MODE ? '(Dev Mode)' : ''}</Text>
+            
+            {/* Hiển thị lỗi chung nếu có */}
+            {errorMsg ? (
+              <Text style={authStyles.errorText}>{errorMsg}</Text>
+            ) : null}
 
             <TextInput
               label="Họ"
               value={firstName}
-              onChangeText={setFirstName}
+              onChangeText={(text) => handleInputChange('firstName', text)}
               mode="outlined"
               style={authStyles.input}
               placeholder="VD: Nguyễn"
               placeholderTextColor="gray"
               theme={{ colors: { background: theme.colors.background } }}
+              error={!!errors.firstName}
             />
+            {errors.firstName ? (
+              <Text style={authStyles.fieldError}>{errors.firstName}</Text>
+            ) : null}
 
             <TextInput
               label="Tên"
               value={lastName}
-              onChangeText={setLastName}
+              onChangeText={(text) => handleInputChange('lastName', text)}
               mode="outlined"
               style={authStyles.input}
               placeholder="VD: Văn A"
               placeholderTextColor="gray"
               theme={{ colors: { background: theme.colors.background } }}
+              error={!!errors.lastName}
             />
+            {errors.lastName ? (
+              <Text style={authStyles.fieldError}>{errors.lastName}</Text>
+            ) : null}
 
             <TextInput
               label="Email"
               value={email}
-              onChangeText={setEmail}
+              onChangeText={(text) => handleInputChange('email', text)}
               keyboardType="email-address"
               autoCapitalize="none"
               mode="outlined"
@@ -197,12 +305,16 @@ export default function RegisterScreen({ navigation }) {
               placeholder="VD: abc@gmail.com"
               placeholderTextColor="gray"
               theme={{ colors: { background: theme.colors.background } }}
+              error={!!errors.email}
             />
+            {errors.email ? (
+              <Text style={authStyles.fieldError}>{errors.email}</Text>
+            ) : null}
 
             <TextInput
               label="Số điện thoại"
               value={phone}
-              onChangeText={setPhone}
+              onChangeText={(text) => handleInputChange('phone', text)}
               keyboardType="phone-pad"
               mode="outlined"
               style={authStyles.input}
@@ -214,19 +326,23 @@ export default function RegisterScreen({ navigation }) {
             <TextInput
               label="Tên người dùng"
               value={username}
-              onChangeText={setUsername}
+              onChangeText={(text) => handleInputChange('username', text)}
               autoCapitalize="none"
               mode="outlined"
               style={authStyles.input}
               placeholder="VD: nguyenvana"
               placeholderTextColor="gray"
               theme={{ colors: { background: theme.colors.background } }}
+              error={!!errors.username}
             />
+            {errors.username ? (
+              <Text style={authStyles.fieldError}>{errors.username}</Text>
+            ) : null}
 
             <TextInput
               label="Mật khẩu"
               value={password}
-              onChangeText={setPassword}
+              onChangeText={(text) => handleInputChange('password', text)}
               secureTextEntry={!showPassword}
               right={
                 <TextInput.Icon
@@ -239,12 +355,16 @@ export default function RegisterScreen({ navigation }) {
               placeholder="Nhập mật khẩu (ít nhất 6 ký tự)"
               placeholderTextColor="gray"
               theme={{ colors: { background: theme.colors.background } }}
+              error={!!errors.password}
             />
+            {errors.password ? (
+              <Text style={authStyles.fieldError}>{errors.password}</Text>
+            ) : null}
 
             <TextInput
               label="Xác nhận mật khẩu"
               value={confirmPassword}
-              onChangeText={setConfirmPassword}
+              onChangeText={(text) => handleInputChange('confirmPassword', text)}
               secureTextEntry={!showConfirmPassword}
               right={
                 <TextInput.Icon
@@ -257,7 +377,11 @@ export default function RegisterScreen({ navigation }) {
               placeholder="Nhập lại mật khẩu"
               placeholderTextColor="gray"
               theme={{ colors: { background: theme.colors.background } }}
+              error={!!errors.confirmPassword}
             />
+            {errors.confirmPassword ? (
+              <Text style={authStyles.fieldError}>{errors.confirmPassword}</Text>
+            ) : null}
 
             <TouchableOpacity onPress={pickAvatar} style={authStyles.avatarContainer}>
               {avatar ? (
