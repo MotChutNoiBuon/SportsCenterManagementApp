@@ -12,12 +12,14 @@ import {
   ScrollView,
   Keyboard,
   TouchableWithoutFeedback,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import { login } from '../../api/authService';
 import { authStyles, theme } from '../../styles';
 import { useUser } from '../../contexts/UserContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function LoginScreen({ navigation }) {
   const { login: userLogin } = useUser();
@@ -40,50 +42,53 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleLogin = async () => {
-    // Xóa thông báo lỗi cũ
-    setErrorMsg('');
-    
-    // Kiểm tra đầu vào
-    if (!validate()) {
-      return;
-    }
-
     try {
       setIsLoading(true);
-      
+      setErrorMsg('');
+
+      // Kiểm tra hợp lệ
+      if (!username || !password) {
+        setErrorMsg('Vui lòng nhập đầy đủ thông tin');
+        return;
+      }
+
       // Gọi API đăng nhập
-      const response = await login(username, password);
-      
-      // Lưu thông tin người dùng vào UserContext
-      await userLogin(
-        response,
-        response.access,
-        response.role || 'member'
+      const result = await login({
+        username: username.trim(),
+        password: password.trim()
+      });
+
+      console.log('Kết quả đăng nhập:', result);
+      console.log('Vai trò người dùng:', result.user?.role);
+
+      // Lưu thông tin đăng nhập
+      await AsyncStorage.setItem('user', JSON.stringify(result.user));
+      await AsyncStorage.setItem('access_token', result.tokens.access);
+      if (result.tokens.refresh) {
+        await AsyncStorage.setItem('refresh_token', result.tokens.refresh);
+      }
+
+      // Cập nhật UserContext
+      await userLogin(result.user, result.tokens.access, result.user.role);
+
+      // Hiển thị thông báo thành công
+      Alert.alert(
+        'Đăng nhập thành công',
+        `Xin chào ${result.user.username}!`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              // Không cần navigation.reset() vì UserContext sẽ tự động chuyển hướng
+              // dựa trên isLoggedIn và userRole
+            }
+          }
+        ]
       );
-      
-      console.log('Đăng nhập thành công!', response);
-      
-      // Điều hướng được xử lý tự động qua UserContext trong App.js
+
     } catch (error) {
       console.error('Lỗi đăng nhập:', error);
-      
-      // Xử lý các loại lỗi khác nhau
-      if (error.response) {
-        // Lỗi từ server
-        if (error.response.data && error.response.data.detail) {
-          setErrorMsg(error.response.data.detail);
-        } else if (error.response.data && error.response.data.error_description) {
-          setErrorMsg(error.response.data.error_description);
-        } else {
-          setErrorMsg('Sai tên đăng nhập hoặc mật khẩu');
-        }
-      } else if (error.request) {
-        // Không nhận được phản hồi từ server
-        setErrorMsg('Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.');
-      } else {
-        // Lỗi trong quá trình thiết lập request
-        setErrorMsg(error.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
-      }
+      setErrorMsg(error.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
     } finally {
       setIsLoading(false);
     }

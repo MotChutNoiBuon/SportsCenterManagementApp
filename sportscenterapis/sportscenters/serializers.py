@@ -4,6 +4,9 @@ from rest_framework.serializers import ModelSerializer
 from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
+from oauth2_provider.models import AccessToken, Application
+from django.utils import timezone
+from datetime import timedelta
 
 from .models import Class, Trainer, User, Progress,Receptionist,Payment,Member,Notification,Appointment,InternalNews,Enrollment, Statistic
 
@@ -14,10 +17,23 @@ class LoginSerializer(serializers.Serializer):
     def validate(self, data):
         user = authenticate(**data)
         if user and user.is_active:
-            refresh = RefreshToken.for_user(user)
+            # Tạo hoặc lấy token cho user
+            app = Application.objects.first()  # Lấy application đầu tiên hoặc theo điều kiện cụ thể
+            if not app:
+                raise serializers.ValidationError("OAuth2 Application chưa được cấu hình.")
+
+            # Tạo access token
+            token = AccessToken.objects.create(
+                user=user,
+                application=app,
+                expires=timezone.now() + timedelta(days=1),
+                token=f'token_{user.id}_{timezone.now().timestamp()}'  # Tạo token string theo cách của bạn
+            )
+
             return {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
+                'token': token.token,
+                'user_id': user.id,
+                'username': user.username
             }
         raise serializers.ValidationError("Tài khoản hoặc mật khẩu không đúng.")
 

@@ -1,49 +1,38 @@
-// api/apiConfig.js
+import { Platform } from 'react-native';
 
-// Thay đổi URL theo máy chủ backend của bạn
-// Nếu chạy trên thiết bị thật, sử dụng IP máy chủ thật
-// Nếu chạy trên emulator, sử dụng 10.0.2.2 (Android) hoặc localhost (iOS)
-export const API_BASE_URL = 'http://10.0.2.2:8000';  // Mặc định cho Android Emulator
+// Cờ để kiểm tra chế độ phát triển
+export const DEV_MODE = false;
 
-// Sử dụng DEV_API để kiểm tra nếu backend không có sẵn
-export const DEV_MODE = true;
-
-// Các thiết lập thay thế cho môi trường khác nhau
-export const API_CONFIG = {
-  // Emulator Android 
-  androidEmulator: 'http://10.0.2.2:8000',
-  // Thiết bị iOS/iOS Simulator
-  iOSDevice: 'http://localhost:8000',
-  // Thiết bị thật kết nối cùng mạng LAN
-  localNetwork: 'http://192.168.1.100:8000', // Thay đổi thành IP thực của máy chủ
-  // Máy chủ sản phẩm
-  production: 'https://api.sportscenter.com',
+// Xác định URL dựa trên môi trường
+const getBaseUrl = () => {
+  if (__DEV__) {
+    // Nếu đang chạy trên emulator
+    if (Platform.OS === 'android') {
+      // return 'http://192.168.2.16:8000'; // Android emulator
+      return 'http://192.168.2.7:8000';
+    } else if (Platform.OS === 'ios') {
+      return 'http://localhost:8000'; // iOS simulator
+    }
+  }
+  // Nếu đang chạy trên thiết bị thật
+  // Đảm bảo thay '192.168.x.x' bằng địa chỉ IP thực của máy tính bạn trong cùng mạng Wi-Fi
+  // return 'http://192.168.2.16:8000'; // Localhost - Thay 'x.x' bằng IP máy tính của bạn
+  return 'http://192.168.2.7:8000';
 };
 
-// Đường dẫn API endpoints
+// API base URL cho toàn bộ ứng dụng
+export const API_BASE_URL = getBaseUrl();
+
+// Các endpoint API
 export const API_ENDPOINTS = {
-  // Auth
-  register: '/api/register/',
-  login: '/api/login/',
-  users: '/api/users/',
-  // User
-  profile: '/api/users/me/',
-  // Classes
-  classes: '/api/classes/',
-  enrollments: '/api/enrollments/',
-  // Progress
-  progress: '/api/progress/',
-  // Appointments
-  appointments: '/api/appointments/',
-  // Payments
-  payments: '/api/payments/',
-  // Notifications
-  notifications: '/api/notifications/',
+  register: '/register/',
+  login: '/login/',
+  users: '/users/',
+  profile: '/users/me/',
+  classes: '/classes/',
+  enrollments: '/enrollments/',
+  progress: '/progress/',
+  appointments: '/appointments/',
+  payments: '/payments/',
+  notifications: '/notifications/',
 };
-
-// Cấu hình OAuth2 (client credentials)
-export const OAUTH2_CONFIG = {
-  client_id: 'HxQDtnxYJjTkdRcsicafPK9QqclTYaU8l1CxOQLQ',
-  client_secret: 'sportscenter2024',
-  grant_type: 'password',
-}; 
