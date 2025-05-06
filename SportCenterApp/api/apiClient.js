@@ -1,15 +1,32 @@
 // api/apiClient.js
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL, OAUTH2_CONFIG } from './apiConfig';
+import { API_BASE_URL } from './apiConfig';
+import { refreshToken, logout } from './authService';
 
 // Tạo một instance axios cho API
-export const apiClient = axios.create({
+const apiClient = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
 });
+
+// Biến để theo dõi trạng thái refresh token
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  
+  failedQueue = [];
+};
 
 // Interceptor để thêm token vào mỗi request
 apiClient.interceptors.request.use(
@@ -20,59 +37,47 @@ apiClient.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Interceptor để xử lý refresh token khi token hết hạn
+// Interceptor để xử lý lỗi 401 và tự động refresh token
 apiClient.interceptors.response.use(
-  (response) => {
-    return response;
-  },
+  (response) => response,
   async (error) => {
     const originalRequest = error.config;
     
-    if (error.response.status === 401 && !originalRequest._retry) {
+    // Nếu lỗi 401 và chưa thử refresh token
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // Nếu đang refresh token, thêm request vào hàng đợi
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(token => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            return axios(originalRequest);
+          })
+          .catch(err => Promise.reject(err));
+      }
+      
       originalRequest._retry = true;
+      isRefreshing = true;
       
       try {
-        const refreshToken = await AsyncStorage.getItem('refresh_token');
-        
-        if (!refreshToken) {
-          // Không có refresh token, buộc đăng nhập lại
-          await AsyncStorage.removeItem('isLoggedIn');
-          await AsyncStorage.removeItem('userRole');
-          // Chuyển hướng về màn hình đăng nhập sẽ được xử lý ở App.js
-          return Promise.reject(error);
-        }
-        
-        // Thực hiện refresh token
-        const response = await axios.post(`${API_BASE_URL}/o/token/`, {
-          grant_type: 'refresh_token',
-          refresh_token: refreshToken,
-          client_id: OAUTH2_CONFIG.client_id,
-          client_secret: OAUTH2_CONFIG.client_secret,
-        });
-        
-        // Lưu token mới
-        await AsyncStorage.setItem('access_token', response.data.access_token);
-        await AsyncStorage.setItem('refresh_token', response.data.refresh_token);
-        
-        // Thử lại request ban đầu với token mới
-        originalRequest.headers.Authorization = `Bearer ${response.data.access_token}`;
-        return apiClient(originalRequest);
+        const tokens = await refreshToken();
+        processQueue(null, tokens.access);
+        originalRequest.headers.Authorization = `Bearer ${tokens.access}`;
+        return axios(originalRequest);
       } catch (refreshError) {
-        // Refresh token thất bại, xóa thông tin đăng nhập
-        await AsyncStorage.removeItem('access_token');
-        await AsyncStorage.removeItem('refresh_token');
-        await AsyncStorage.removeItem('isLoggedIn');
-        await AsyncStorage.removeItem('userRole');
-        
+        processQueue(refreshError, null);
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
     
     return Promise.reject(error);
   }
-); 
+);
+
+export default apiClient; 

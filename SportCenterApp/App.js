@@ -14,12 +14,16 @@ import RegisterScreen from './screens/Auth/RegisterScreen';
 
 // Member Screens (thay vì Customer)
 import CustomerDashboard from './screens/Customer/CustomerDashboard';
+import ClassRegistrationScreen from './screens/Customer/ClassRegistrationScreen';
+import PaymentScreen from './screens/Customer/PaymentScreen';
 
 // Trainer Screens (thay vì Coach)
 import CoachDashboard from './screens/Coach/CoachDashboard';
+import StudentManagementScreen from './screens/Coach/StudentManagementScreen';
 
 // Admin Screens
 import AdminDashboard from './screens/Admin/AdminDashboard';
+import UserManagementScreen from './screens/Admin/UserManagementScreen';
 
 // Shared Screens
 import NotificationScreen from './screens/Shared/NotificationScreen';
@@ -67,6 +71,16 @@ const AppNavigator = () => {
               component={CustomerDashboard}
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="ClassRegistration"
+              component={ClassRegistrationScreen}
+              options={{ title: 'Đăng ký lớp học' }}
+            />
+            <Stack.Screen
+              name="PaymentScreen"
+              component={PaymentScreen}
+              options={{ title: 'Thanh toán' }}
+            />
           </>
         ) : userRole === 'trainer' ? (
           // Trainer Screens (was 'coach')
@@ -76,6 +90,11 @@ const AppNavigator = () => {
               component={CoachDashboard}
               options={{ headerShown: false }}
             />
+            <Stack.Screen
+              name="StudentManagement"
+              component={StudentManagementScreen}
+              options={{ title: 'Quản lý học viên' }}
+            />
           </>
         ) : userRole === 'admin' ? (
           // Admin Screens
@@ -84,6 +103,11 @@ const AppNavigator = () => {
               name="AdminDashboard"
               component={AdminDashboard}
               options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name="UserManagement"
+              component={UserManagementScreen}
+              options={{ title: 'Quản lý người dùng' }}
             />
           </>
         ) : userRole === 'receptionist' ? (
@@ -120,11 +144,6 @@ const AppNavigator = () => {
           component={ClassDetails}
           options={{ title: 'Chi tiết lớp học' }}
         />
-
-        {/* We can add conditional screens like this later */}
-        {/* {userRole === 'member' && (
-          <Stack.Screen name="MemberSpecificScreen" component={...} />
-        )} */}
       </Stack.Navigator>
     </NavigationContainer>
   );

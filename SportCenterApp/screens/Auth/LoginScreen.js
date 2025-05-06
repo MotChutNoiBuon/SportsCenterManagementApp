@@ -20,6 +20,7 @@ import { login } from '../../api/authService';
 import { authStyles, theme } from '../../styles';
 import { useUser } from '../../contexts/UserContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { CLIENT_ID, CLIENT_SECRET } from '../../api/apiConfig';
 
 export default function LoginScreen({ navigation }) {
   const { login: userLogin } = useUser();
@@ -46,24 +47,24 @@ export default function LoginScreen({ navigation }) {
       setIsLoading(true);
       setErrorMsg('');
 
-      // Kiểm tra hợp lệ
-      if (!username || !password) {
-        setErrorMsg('Vui lòng nhập đầy đủ thông tin');
+      if (!validate()) {
         return;
       }
 
-      // Gọi API đăng nhập
+      // Gọi API đăng nhập Token Authentication
       const result = await login({
         username: username.trim(),
         password: password.trim()
       });
 
       console.log('Kết quả đăng nhập:', result);
-      console.log('Vai trò người dùng:', result.user?.role);
 
-      // Lưu thông tin đăng nhập
-      await AsyncStorage.setItem('user', JSON.stringify(result.user));
+      // Lưu thông tin đăng nhập vào AsyncStorage
+      await AsyncStorage.setItem('userData', JSON.stringify(result.user));
       await AsyncStorage.setItem('access_token', result.tokens.access);
+      await AsyncStorage.setItem('userRole', result.user.role);
+      await AsyncStorage.setItem('isLoggedIn', 'true');
+      
       if (result.tokens.refresh) {
         await AsyncStorage.setItem('refresh_token', result.tokens.refresh);
       }
@@ -79,8 +80,7 @@ export default function LoginScreen({ navigation }) {
           {
             text: 'OK',
             onPress: () => {
-              // Không cần navigation.reset() vì UserContext sẽ tự động chuyển hướng
-              // dựa trên isLoggedIn và userRole
+              // UserContext sẽ tự động chuyển hướng dựa trên isLoggedIn và userRole
             }
           }
         ]
@@ -88,7 +88,19 @@ export default function LoginScreen({ navigation }) {
 
     } catch (error) {
       console.error('Lỗi đăng nhập:', error);
-      setErrorMsg(error.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
+      
+      let errorMessage = 'Đăng nhập thất bại. Vui lòng thử lại.';
+      
+      if (error.response) {
+        if (error.response.status === 401 || 
+            (error.response.status === 400 && error.response.data.error === 'invalid_grant')) {
+          errorMessage = 'Tên đăng nhập hoặc mật khẩu không đúng.';
+        }
+      } else if (error.request) {
+        errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
+      }
+      
+      setErrorMsg(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -132,6 +144,7 @@ export default function LoginScreen({ navigation }) {
                 autoCapitalize="none"
                 theme={{ colors: { background: theme.colors.background } }}
                 error={errorMsg && !username}
+                disabled={isLoading}
               />
 
               {/* Trường Mật khẩu */}
@@ -153,6 +166,7 @@ export default function LoginScreen({ navigation }) {
                 style={authStyles.input}
                 theme={{ colors: { background: theme.colors.background } }}
                 error={errorMsg && !password}
+                disabled={isLoading}
               />
 
               {/* Nút Đăng nhập */}

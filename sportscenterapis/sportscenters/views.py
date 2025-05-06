@@ -103,14 +103,25 @@ class TrainerViewSet(viewsets.ModelViewSet):
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [permissions.AllowAny]  # Cung cấp quyền truy cập công khai cho việc đăng ký và đăng nhập
+    permission_classes = [permissions.AllowAny]  # Cho phép đăng ký công khai
     pagination_class = paginators.StandardResultsSetPagination
 
+    def get_permissions(self):
+        """Phân quyền API"""
+        if self.action in ['update', 'partial_update', 'destroy']:
+            return [permissions.IsAuthenticated(), perms.IsOwnerOrAdmin()]
+        return super().get_permissions()
+    
     @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    def me(self, request):
-        """Trả về thông tin của người dùng đang đăng nhập"""
+    def current_user(self, request):
+        """Trả về thông tin của người dùng đang đăng nhập - cần thiết cho cơ chế xác thực"""
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
+
+    @action(detail=False, methods=['get'], url_path='me')
+    def me(self, request):
+        """Alias cho current_user để tương thích với frontend hiện tại"""
+        return self.current_user(request)
 
 
 class MemberViewSet(viewsets.ModelViewSet):
@@ -315,26 +326,3 @@ class StatisticViewSet(viewsets.ModelViewSet):
 
         stats = self.get_class_stats(period, start_date, end_date)
         return Response(stats)
-
-# views.py
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework import status
-from .serializers import RegisterSerializer
-
-class RegisterView(APIView):
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({"message": "Đăng ký thành công!"}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-from .serializers import LoginSerializer
-
-class LoginView(APIView):
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            return Response(serializer.validated_data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
