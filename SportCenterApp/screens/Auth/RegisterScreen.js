@@ -64,64 +64,29 @@ export default function RegisterScreen({ navigation }) {
     if (!validate()) return;
 
     try {
-      setIsRegistering(true);
+      setIsRegistering(true);  // Bật trạng thái loading
 
-      const userData = {
-        username,
-        password,
-        password2: confirmPassword,
-        email,
-        first_name,
-        last_name,
-        phone,
-        avatar,
-        role: 'member'
-      };
+      const userData = { username, password, email, first_name, last_name, phone, avatar };
 
-      console.log("Dữ liệu đăng ký gửi đi:", userData);
-
-      // Gọi API đăng ký
-      await register(userData);
-      
-      console.log("Đăng ký thành công");
-
-      Alert.alert(
-        'Đăng ký thành công',
-        'Vui lòng đăng nhập để tiếp tục!',
-        [{ text: 'OK', onPress: () => navigation.navigate('Login') }]
-      );
-    } catch (error) {
-      console.error('Lỗi đăng ký chi tiết:', error);
-      
-      let errorMessage = 'Đăng ký không thành công. Vui lòng thử lại sau.';
-      
-      if (error.message) {
-        errorMessage = error.message;
-      } else if (error.response && error.response.data) {
-        // Hiển thị lỗi chi tiết từ backend
-        console.log("Lỗi từ backend:", error.response.data);
-        
-        const errorData = error.response.data;
-        if (errorData.username) {
-          errorMessage = `Lỗi tên đăng nhập: ${errorData.username[0]}`;
-        } else if (errorData.email) {
-          errorMessage = `Lỗi email: ${errorData.email[0]}`;
-        } else if (errorData.password) {
-          errorMessage = `Lỗi mật khẩu: ${errorData.password[0]}`;
-        } else if (errorData.non_field_errors) {
-          // Xử lý lỗi chung
-          errorMessage = errorData.non_field_errors[0];
-        } else {
-          // Hiển thị tất cả lỗi nếu có
-          errorMessage = JSON.stringify(errorData);
-        }
+      let result;
+      if (DEV_MODE) {
+        result = await mockRegister(userData);
+      } else {
+        result = await register(userData);
       }
-      
-      setErrorMsg(errorMessage);
-      Alert.alert('Lỗi đăng ký', errorMessage);
+
+      Alert.alert('Đăng ký thành công', 'Vui lòng đăng nhập để tiếp tục!', [{ text: 'OK', onPress: () => navigation.navigate('Login') }]);
+    } catch (error) {
+      setErrorMsg('Đăng ký không thành công. Vui lòng thử lại sau.');
     } finally {
-      setIsRegistering(false);
+      setIsRegistering(false);  // Tắt trạng thái loading
     }
+  };
+
+  const mockRegister = async (userData) => {
+    return new Promise((resolve) => {
+      setTimeout(() => resolve(userData), 1500);
+    });
   };
 
   const pickAvatar = async () => {

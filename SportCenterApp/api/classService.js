@@ -3,17 +3,12 @@ import { apiClient } from './apiClient';
 import { API_ENDPOINTS } from './apiConfig';
 
 // Lấy danh sách lớp học
-export const getClasses = async (filters = {}) => {
+export const getClasses = async () => {
   try {
-    const params = new URLSearchParams();
-    Object.keys(filters).forEach(key => {
-      if (filters[key]) params.append(key, filters[key]);
-    });
-    
-    const response = await apiClient.get(`${API_ENDPOINTS.classes}?${params.toString()}`);
+    const response = await apiClient.get(API_ENDPOINTS.classes);
     return response.data;
   } catch (error) {
-    console.error('Lấy danh sách lớp học thất bại:', error.message);
+    console.error('Lỗi khi lấy danh sách lớp học:', error);
     throw error;
   }
 };
@@ -24,7 +19,7 @@ export const getClassDetails = async (classId) => {
     const response = await apiClient.get(`${API_ENDPOINTS.classes}${classId}/`);
     return response.data;
   } catch (error) {
-    console.error('Lấy chi tiết lớp học thất bại:', error.message);
+    console.error('Lỗi khi lấy chi tiết lớp học:', error);
     throw error;
   }
 };
@@ -58,6 +53,26 @@ export const cancelEnrollment = async (enrollmentId) => {
     return response.data;
   } catch (error) {
     console.error('Hủy đăng ký lớp học thất bại:', error.message);
+    throw error;
+  }
+};
+
+export const getUpcomingClasses = async () => {
+  try {
+    const response = await apiClient.get(`${API_ENDPOINTS.classes}?status=upcoming`);
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi lấy lớp học sắp tới:', error);
+    throw error;
+  }
+};
+
+export const getRecommendedClasses = async () => {
+  try {
+    const response = await apiClient.get(`${API_ENDPOINTS.classes}?recommended=true`);
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi lấy lớp học đề xuất:', error);
     throw error;
   }
 }; 

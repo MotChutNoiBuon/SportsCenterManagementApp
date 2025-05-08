@@ -37,20 +37,17 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 2,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
     ),
 }
 
 OAUTH2_PROVIDER = { 'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore' }
 
-
-
-# CLIENT_ID = 'LMInXkXTRpviiIyZ2hQWhIs8hsb26ohoycbcCUPF'
-# CLIENT_SECRET = 'pbkdf2_sha256$870000$Ua5mLPx4x5WvfXxsvqapXc$wEg/nSahdzjgt5HcEHT6KjFP9VcZIRZzkGB5uYCSsO4='
+#CLIENT_ID = 'LMInXkXTRpviiIyZ2hQWhIs8hsb26ohoycbcCUPF'
+#CLIENT_SECRET = 'pbkdf2_sha256$870000$Ua5mLPx4x5WvfXxsvqapXc$wEg/nSahdzjgt5HcEHT6KjFP9VcZIRZzkGB5uYCSsO4='
 # Cua Loc
 CLIENT_ID = '7RphfNKj71H9i3uaIN9ps6GKtMCxDHWtjWiEPWPI'
 CLIENT_SECRET = 'BTK3xttEJH15ynjVKTC5CRQZsqoZIRUkQHt62rkfGlWoYWDogJfbe5WAJkH4PIIK8wlDqw0tENo2b6zMgwodBjITTEyVpgYnduteXcvHNvJVqpbpOLlsHktDkkXjzowP'
+
 
 # Application definition
 
@@ -189,8 +186,7 @@ CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://10.0.2.2:8000',
     'http://192.168.2.16:8000',
-    'http://192.168.2.7:8000', # IP Wifi nhà Lộc
-    'http://192.168.20.185:8000', # IP Bulsan Coffee
-    'http://192.168.157.52' # IP Phone Lộc
+    'http://192.168.157.52:8000', # Phone Loc
+    'http://192.168.20.162:8000'
 ]
-ALLOWED_HOSTS = ['192.168.2.16', '192.168.2.7', '192.168.157.52', '192.168.20.185', 'localhost', '127.0.0.1','10.0.2.2']
+ALLOWED_HOSTS = ['192.168.20.162', '192.168.157.52', '192.168.2.16', 'localhost', '127.0.0.1','10.0.2.2']

@@ -6,11 +6,13 @@ import {
   ScrollView, 
   Image, 
   TouchableOpacity, 
+  Alert, 
   ActivityIndicator 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import CustomButton from '../../components/CustomButton';
+import { getClassDetails } from '../../api/classService';
 
 const ClassDetails = ({ route, navigation }) => {
   const { classId } = route.params;
@@ -19,61 +21,21 @@ const ClassDetails = ({ route, navigation }) => {
   const [bookingLoading, setBookingLoading] = useState(false);
 
   useEffect(() => {
-    // In a real app, this would fetch class details from an API or Firebase
-    const fetchClassDetails = async () => {
-      setLoading(true);
-      
-      // Simulate API fetch delay
-      setTimeout(() => {
-        // Mock data
-        setClassData({
-          id: classId,
-          title: 'Yoga cơ bản',
-          description: 'Lớp yoga dành cho người mới bắt đầu, giúp tăng cường sức khỏe và độ linh hoạt của cơ thể. Các bài tập đơn giản, dễ thực hiện và phù hợp với mọi lứa tuổi.',
-          instructor: 'Nguyễn Thị B',
-          instructorBio: 'Huấn luyện viên yoga với hơn 5 năm kinh nghiệm. Chuyên về yoga trị liệu và yoga cho người mới.',
-          date: 'Thứ 2, Thứ 4, Thứ 6',
-          time: '10:00 AM - 11:00 AM',
-          duration: 60,
-          level: 'beginner',
-          location: 'Phòng Yoga 1',
-          category: 'yoga',
-          thumbnail: 'https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b',
-          price: 150000,
-          pricePerSession: 80000,
-          spotsAvailable: 5,
-          totalSpots: 12,
-          equipment: ['Thảm yoga', 'Khăn', 'Nước uống'],
-          benefits: [
-            'Tăng cường sức khỏe tim mạch',
-            'Cải thiện độ linh hoạt',
-            'Giảm stress và lo âu',
-            'Cải thiện tư thế và thăng bằng',
-          ],
-          reviews: [
-            {
-              id: '1',
-              user: 'Trần Văn X',
-              rating: 5,
-              comment: 'Lớp học rất hữu ích cho người mới như tôi. Huấn luyện viên hướng dẫn rất tận tình.',
-              date: '12/10/2023',
-            },
-            {
-              id: '2',
-              user: 'Nguyễn Thị Y',
-              rating: 4,
-              comment: 'Không gian tập luyện thoáng mát, sạch sẽ. Huấn luyện viên nhiệt tình.',
-              date: '10/10/2023',
-            },
-          ],
-        });
-        
-        setLoading(false);
-      }, 1000);
-    };
-
-    fetchClassDetails();
+    loadClassData();
   }, [classId]);
+
+  const loadClassData = async () => {
+    try {
+      setLoading(true);
+      const data = await getClassDetails(classId);
+      setClassData(data);
+    } catch (error) {
+      console.error('Lỗi khi tải thông tin lớp học:', error);
+      Alert.alert('Lỗi', 'Không thể tải thông tin lớp học. Vui lòng thử lại sau.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBookClass = () => {
     setBookingLoading(true);
@@ -96,6 +58,14 @@ const ClassDetails = ({ route, navigation }) => {
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4A90E2" />
         <Text style={styles.loadingText}>Đang tải thông tin lớp học...</Text>
+      </View>
+    );
+  }
+
+  if (!classData) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Không tìm thấy thông tin lớp học</Text>
       </View>
     );
   }
@@ -284,6 +254,15 @@ const styles = StyleSheet.create({
   },
   loadingText: {
     marginTop: 10,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  errorText: {
     color: '#666',
   },
   headerContainer: {

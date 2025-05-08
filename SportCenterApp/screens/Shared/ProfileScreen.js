@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { logout } from '../../api/authService';
+import { getUserProfile, updateUserProfile } from '../../api/userService';
 
 const ProfileScreen = ({ navigation }) => {
   const [user, setUser] = useState(null);
@@ -23,31 +24,22 @@ const ProfileScreen = ({ navigation }) => {
   const [notifications, setNotifications] = useState(true);
   const [loadingSubmit, setLoadingSubmit] = useState(false);
 
-  // Mock user data - In a real app, this would be fetched from an API or Firebase
   useEffect(() => {
-    // Simulate fetching user data
-    setTimeout(() => {
-      const userData = {
-        id: '123456',
-        name: 'Nguyễn Văn A',
-        email: 'nguyenvana@example.com',
-        phone: '0987654321',
-        address: 'Số 123, Đường ABC, Quận XYZ, TP. Hồ Chí Minh',
-        photo: 'https://i.pravatar.cc/300',
-        role: 'customer',
-        membershipTier: 'Gold',
-        memberSince: '10/2022',
-        stats: {
-          totalClasses: 42,
-          attendedClasses: 38,
-          upcomingClasses: 3,
-        },
-      };
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      setLoading(true);
+      const userData = await getUserProfile();
       setUser(userData);
       setEditedUser(userData);
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể tải thông tin người dùng. Vui lòng thử lại sau.');
+    } finally {
       setLoading(false);
-    }, 1000);
-  }, []);
+    }
+  };
 
   const handleEdit = () => {
     setEditing(true);
@@ -58,72 +50,36 @@ const ProfileScreen = ({ navigation }) => {
     setEditing(false);
   };
 
-  const handleSave = () => {
-    // Validate inputs
-    if (!editedUser.name || !editedUser.email || !editedUser.phone) {
-      Alert.alert('Lỗi', 'Vui lòng điền đầy đủ thông tin bắt buộc');
-      return;
-    }
-
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(editedUser.email)) {
-      Alert.alert('Lỗi', 'Email không hợp lệ');
-      return;
-    }
-
-    // Phone validation (Vietnamese phone number)
-    const phoneRegex = /^0\d{9}$/;
-    if (!phoneRegex.test(editedUser.phone)) {
-      Alert.alert('Lỗi', 'Số điện thoại không hợp lệ');
-      return;
-    }
-
-    setLoadingSubmit(true);
-
-    // Simulate API call to update user profile
-    setTimeout(() => {
-      setUser(editedUser);
+  const handleSave = async () => {
+    try {
+      setLoadingSubmit(true);
+      const updatedUser = await updateUserProfile(editedUser);
+      setUser(updatedUser);
       setEditing(false);
+      Alert.alert('Thành công', 'Thông tin đã được cập nhật');
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể cập nhật thông tin. Vui lòng thử lại sau.');
+    } finally {
       setLoadingSubmit(false);
-      Alert.alert('Thành công', 'Thông tin cá nhân đã được cập nhật');
-    }, 1000);
+    }
   };
 
   const handleLogout = async () => {
-    Alert.alert(
-      'Đăng xuất',
-      'Bạn có chắc chắn muốn đăng xuất?',
-      [
-        {
-          text: 'Hủy',
-          style: 'cancel',
-        },
-        {
-          text: 'Đăng xuất',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await logout(); // Gọi hàm logout từ authService
-              
-              // Điều hướng về Welcome mà không dùng reset
-              navigation.navigate('Welcome');
-            } catch (error) {
-              console.error('Lỗi khi đăng xuất:', error);
-              Alert.alert('Lỗi', 'Đã xảy ra lỗi khi đăng xuất. Vui lòng thử lại.');
-            }
-          },
-        },
-      ],
-      { cancelable: true }
-    );
+    try {
+      await logout();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể đăng xuất. Vui lòng thử lại sau.');
+    }
   };
 
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#4A90E2" />
-        <Text style={styles.loadingText}>Đang tải thông tin...</Text>
       </View>
     );
   }

@@ -13,7 +13,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getClasses } from '../../api/classService';
+import { getClasses, getUpcomingClasses, getRecommendedClasses } from '../../api/classService';
 import { logout } from '../../api/authService';
 import LessonCard from '../../components/LessonCard';
 
@@ -21,7 +21,13 @@ const CustomerDashboard = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [upcomingClasses, setUpcomingClasses] = useState([]);
   const [recommendedClasses, setRecommendedClasses] = useState([]);
-  const [categories, setCategories] = useState([]);
+  const [categories] = useState([
+    { id: 'all', name: 'Tất cả', icon: 'view-list' },
+    { id: 'yoga', name: 'Yoga', icon: 'self-improvement' },
+    { id: 'gym', name: 'Gym', icon: 'sports-handball' },
+    { id: 'dacce', name: 'Nhảy', icon: 'sports-mma' },
+    { id: 'swimming', name: 'Bơi lội', icon: 'pool' },
+  ]);
   const [activeCategory, setActiveCategory] = useState('all');
   const [userData, setUserData] = useState(null);
   
@@ -45,123 +51,16 @@ const CustomerDashboard = ({ navigation }) => {
   const loadClassData = async () => {
     setRefreshing(true);
     try {
-      // Gọi API lấy danh sách lớp học
-      const classesResponse = await getClasses();
-      
-      // Trong thực tế, API sẽ trả về dữ liệu thực tế
-      // Tạm thời dùng dữ liệu mẫu vì API có thể chưa hoàn thiện
-      setUpcomingClasses([
-        {
-          id: '1',
-          title: 'Yoga cơ bản',
-          instructor: 'Nguyễn Thị B',
-          date: '18/10/2023',
-          time: '10:00 AM',
-          duration: 60,
-          level: 'beginner',
-          location: 'Phòng Yoga 1',
-          thumbnail: 'https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b',
-          status: 'upcoming',
-          category: 'yoga',
-          spotsAvailable: 5,
-          totalSpots: 12,
-        },
-        {
-          id: '2',
-          title: 'Zumba nâng cao',
-          instructor: 'Trần Văn C',
-          date: '19/10/2023',
-          time: '5:30 PM',
-          duration: 45,
-          level: 'advanced',
-          location: 'Phòng Đa năng 2',
-          thumbnail: 'https://images.unsplash.com/photo-1574680178050-55c6a6a96e0a',
-          status: 'upcoming',
-          category: 'zumba',
-          spotsAvailable: 3,
-          totalSpots: 20,
-        },
+      const [upcomingData, recommendedData] = await Promise.all([
+        getUpcomingClasses(),
+        getRecommendedClasses()
       ]);
       
-      setRecommendedClasses([
-        {
-          id: '3',
-          title: 'Pilates cho người mới',
-          instructor: 'Lê Thị D',
-          date: '20/10/2023',
-          time: '9:00 AM',
-          duration: 50,
-          level: 'beginner',
-          location: 'Phòng Pilates',
-          thumbnail: 'https://images.unsplash.com/photo-1518611012118-696072aa579a',
-          status: 'upcoming',
-          category: 'pilates',
-          spotsAvailable: 8,
-          totalSpots: 10,
-        },
-        {
-          id: '4',
-          title: 'Gym với HLV cá nhân',
-          instructor: 'Phạm Văn E',
-          date: '21/10/2023',
-          time: '2:00 PM',
-          duration: 60,
-          level: 'intermediate',
-          location: 'Phòng Gym',
-          thumbnail: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48',
-          status: 'upcoming',
-          category: 'gym',
-          spotsAvailable: 1,
-          totalSpots: 1,
-        },
-        {
-          id: '5',
-          title: 'Boxing cơ bản',
-          instructor: 'Hoàng Văn F',
-          date: '22/10/2023',
-          time: '7:30 PM',
-          duration: 75,
-          level: 'beginner',
-          location: 'Phòng Boxing',
-          thumbnail: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed',
-          status: 'upcoming',
-          category: 'boxing',
-          spotsAvailable: 6,
-          totalSpots: 12,
-        },
-      ]);
-      
-      setCategories([
-        { id: 'all', name: 'Tất cả', icon: 'view-list' },
-        { id: 'yoga', name: 'Yoga', icon: 'self-improvement' },
-        { id: 'zumba', name: 'Zumba', icon: 'music-note' },
-        { id: 'pilates', name: 'Pilates', icon: 'fitness-center' },
-        { id: 'gym', name: 'Gym', icon: 'sports-handball' },
-        { id: 'boxing', name: 'Boxing', icon: 'sports-mma' },
-        { id: 'swimming', name: 'Bơi lội', icon: 'pool' },
-      ]);
+      setUpcomingClasses(upcomingData);
+      setRecommendedClasses(recommendedData);
     } catch (error) {
       console.error('Lỗi khi tải dữ liệu lớp học:', error);
-      
-      // Xử lý lỗi mạng và hiển thị thông báo phù hợp
-      const errorMessage = error.message.includes('Network Error') 
-        ? 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng và thử lại.'
-        : 'Không thể tải dữ liệu lớp học. Vui lòng thử lại sau.';
-      
-      Alert.alert('Lỗi', errorMessage);
-      
-      // Vẫn hiển thị dữ liệu mẫu trong trường hợp không thể kết nối API
-      setUpcomingClasses([]);
-      setRecommendedClasses([]);
-      setCategories([
-        { id: 'all', name: 'Tất cả', icon: 'view-list' },
-        { id: 'yoga', name: 'Yoga', icon: 'self-improvement' },
-        { id: 'zumba', name: 'Zumba', icon: 'music-note' },
-        { id: 'pilates', name: 'Pilates', icon: 'fitness-center' },
-        { id: 'gym', name: 'Gym', icon: 'sports-handball' },
-        { id: 'boxing', name: 'Boxing', icon: 'sports-mma' },
-        { id: 'swimming', name: 'Bơi lội', icon: 'pool' },
-      ]);
+      Alert.alert('Lỗi', 'Không thể tải dữ liệu lớp học. Vui lòng thử lại sau.');
     } finally {
       setRefreshing(false);
     }
@@ -172,7 +71,6 @@ const CustomerDashboard = ({ navigation }) => {
   };
 
   const handleClassPress = (classItem) => {
-    // Navigate to class details screen
     navigation.navigate('ClassDetails', { classId: classItem.id });
   };
 

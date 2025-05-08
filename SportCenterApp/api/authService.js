@@ -1,7 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { API_BASE_URL, API_ENDPOINTS, CLIENT_ID, CLIENT_SECRET } from './apiConfig';
-import qs from 'qs';
+import { API_BASE_URL, API_ENDPOINTS, OAUTH2_CONFIG } from './apiConfig';
 
 // Tạo một instance axios cho API
 const apiClient = axios.create({
@@ -23,9 +22,6 @@ apiClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-/**
- * Đăng ký người dùng mới - sử dụng RESTful endpoint /users/
- */
 export const register = async (userData) => {
   try {
     console.log('Bắt đầu đăng ký với dữ liệu:', userData);
@@ -33,21 +29,16 @@ export const register = async (userData) => {
     const userDataForApi = {
       username: userData.username,
       password: userData.password,
-      password2: userData.password,
+      password2: userData.password, // Backend yêu cầu xác nhận mật khẩu
       email: userData.email,
       first_name: userData.first_name,
       last_name: userData.last_name,
       phone: userData.phone || '',
-      role: 'member',
+      role: 'member', // Đảm bảo luôn tạo tài khoản member
+      avatar: userData.avatar // Thêm trường avatar
     };
 
-    if (userData.avatar) {
-      userDataForApi.avatar = userData.avatar;
-    }
-
-    console.log('Dữ liệu gửi đến API:', userDataForApi);
-    console.log('API endpoint:', `${API_BASE_URL}${API_ENDPOINTS.register}`);
-
+    console.log('Gửi yêu cầu đăng ký đến endpoint:', API_ENDPOINTS.register);
     const response = await apiClient.post(API_ENDPOINTS.register, userDataForApi);
 
     console.log('Đăng ký thành công, phản hồi:', response.data);
@@ -56,30 +47,25 @@ export const register = async (userData) => {
     console.error('Đăng ký thất bại:', error);
 
     if (error.response) {
-      console.error('Status code:', error.response.status);
-      console.error('Dữ liệu lỗi chi tiết:', error.response.data);
-      
-      // Xử lý lỗi cụ thể
-      if (error.response.status === 400) {
-        if (error.response.data.username) {
-          throw new Error('Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.');
-        }
-        if (error.response.data.email) {
-          throw new Error('Email đã được sử dụng. Vui lòng dùng email khác.');
-        }
-        if (error.response.data.password) {
-          throw new Error('Mật khẩu không hợp lệ: ' + error.response.data.password[0]);
-        }
+      // Kiểm tra nếu lỗi là do trùng tên đăng nhập
+      if (error.response.status === 400 && error.response.data.username) {
+        console.error('Tên đăng nhập đã tồn tại:', error.response.data.username);
+        throw new Error('Tên đăng nhập đã tồn tại. Vui lòng chọn tên khác.');
       }
+
+      console.error('Dữ liệu lỗi:', error.response.data);
+      console.error('Mã trạng thái:', error.response.status);
+    } else if (error.request) {
+      console.error('Không nhận được phản hồi từ server:', error.request);
+    } else {
+      console.error('Lỗi thiết lập request:', error.message);
     }
 
     throw error;
   }
 };
 
-/**
- * Đăng nhập sử dụng OAuth2
- */
+// Đăng nhập và lấy token
 export const login = async (credentials) => {
   try {
     console.log('Thực hiện đăng nhập với:', { username: credentials.username });
@@ -88,8 +74,8 @@ export const login = async (credentials) => {
     const response = await axios.post(`${API_BASE_URL}/o/token/`, {
       username: credentials.username,
       password: credentials.password,
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
+      client_id: OAUTH2_CONFIG.client_id,
+      client_secret: OAUTH2_CONFIG.client_secret,
       grant_type: 'password'
     });
 
@@ -337,68 +323,6 @@ export const logout = async () => {
     return true;
   } catch (error) {
     console.error('Đăng xuất thất bại:', error.message);
-    throw error;
-  }
-};
-
-/**
- * Phương pháp đăng nhập thay thế sử dụng OAuth2 với query string
- */
-export const loginAlternative = async (credentials) => {
-  try {
-    console.log('Thực hiện đăng nhập thay thế với:', { username: credentials.username });
-    
-    // Chuẩn bị URL với query string
-    const url = `${API_BASE_URL}/o/token/?username=${encodeURIComponent(credentials.username)}&password=${encodeURIComponent(credentials.password)}&grant_type=password&client_id=${CLIENT_ID}&client_secret=${CLIENT_SECRET}`;
-    
-    console.log('Sending request to URL:', url);
-    
-    // Gọi API
-    const response = await axios.post(url);
-    
-    console.log('Phản hồi từ server:', response.data);
-    
-    if (response.data && response.data.access_token) {
-      // Lưu token vào AsyncStorage
-      await AsyncStorage.setItem('access_token', response.data.access_token);
-      
-      if (response.data.refresh_token) {
-        await AsyncStorage.setItem('refresh_token', response.data.refresh_token);
-      }
-      
-      // Lấy thông tin người dùng hiện tại
-      const userResponse = await axios.get(`${API_BASE_URL}${API_ENDPOINTS['current-user']}`, {
-        headers: {
-          'Authorization': `Bearer ${response.data.access_token}`,
-        },
-      });
-      
-      const userData = userResponse.data;
-      
-      // Lưu thông tin người dùng vào AsyncStorage
-      await AsyncStorage.setItem('userData', JSON.stringify(userData));
-      await AsyncStorage.setItem('userRole', userData.role);
-      await AsyncStorage.setItem('isLoggedIn', 'true');
-      
-      // Trả về dữ liệu
-      return {
-        user: userData,
-        tokens: {
-          access: response.data.access_token,
-          refresh: response.data.refresh_token || null,
-        }
-      };
-    } else {
-      throw new Error('Phản hồi từ server không hợp lệ');
-    }
-  } catch (error) {
-    console.error('Chi tiết lỗi đăng nhập thay thế:', error.message);
-    
-    if (error.response) {
-      console.error('Status code:', error.response.status);
-      console.error('Response data:', error.response.data);
-    }
-    
     throw error;
   }
 };
