@@ -1,11 +1,11 @@
 // src/screens/Auth/LoginScreen.js
 
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  Image, 
+import React, { useContext, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
   SafeAreaView,
   KeyboardAvoidingView,
   Platform,
@@ -16,83 +16,72 @@ import {
   Alert
 } from 'react-native';
 import { TextInput } from 'react-native-paper';
-import { login } from '../../api/authService';
 import { authStyles, theme } from '../../styles';
-import { useUser } from '../../contexts/UserContext';
+import { MyDispatchContext } from '../../contexts/UserContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import apiConfig, { API_ENDPOINTS, authApis } from '../../api/apiConfig';
+import { useNavigation } from "@react-navigation/native";
 
-export default function LoginScreen({ navigation }) {
-  const { login: userLogin } = useUser();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+export default function LoginScreen( ) {
+  const [user, setUser] = useState({});
   const [errorMsg, setErrorMsg] = useState('');
+  const [loading, setLoading] = useState(false);
+  const dispatch = useContext(MyDispatchContext);
+  const nav = useNavigation();
+
+  const info = [{
+    label: "Tên đăng nhập",
+    field: "username",
+    secureTextEntry: false,
+    icon: "text"
+  }, {
+    label: "Mật khẩu",
+    field: "password",
+    secureTextEntry: true,
+    icon: "eye"
+  }];
+
+  const setState = (value, field) => {
+    setUser({ ...user, [field]: value });
+  }
 
   const validate = () => {
-    if (!username) {
-      setErrorMsg('Vui lòng nhập tên đăng nhập');
-      return false;
-    }
-    if (!password) {
-      setErrorMsg('Vui lòng nhập mật khẩu');
-      return false;
-    }
+    for (let i of info)
+      if (!(i.field in user) || user[i.field] === '') {
+        setMsg(`Vui lòng nhập ${i.label}!`);
+        return false;
+      }
     return true;
-  };
+  }
 
   const handleLogin = async () => {
-    try {
-      setIsLoading(true);
-      setErrorMsg('');
+    if (validate() === true) {
+      try {
+        let res = await apiConfig.post(API_ENDPOINTS['login'], {
+          ...user,
+          'client_id': '7RphfNKj71H9i3uaIN9ps6GKtMCxDHWtjWiEPWPI',
+          'client_secret': 'BTK3xttEJH15ynjVKTC5CRQZsqoZIRUkQHt62rkfGlWoYWDogJfbe5WAJkH4PIIK8wlDqw0tENo2b6zMgwodBjITTEyVpgYnduteXcvHNvJVqpbpOLlsHktDkkXjzowP',
+          'grant_type': 'password'
+        });
+        console.info(res.data.access_token);
+        console.info("Successfully logged in!");
+        console.info("User data: ", res.data);
+        await AsyncStorage.setItem('token', res.data.access_token);
 
-      // Kiểm tra hợp lệ
-      if (!username || !password) {
-        setErrorMsg('Vui lòng nhập đầy đủ thông tin');
-        return;
+        console.info('The problem is here!')
+        let u = await authApis(res.data.access_token).get(API_ENDPOINTS['current-user']);
+        dispatch({
+          "type": "login",
+          "payload": u.data
+        });
+        nav.navigate("Welcome");
+      } catch (ex) {
+        console.error(ex);
+      } finally {
+        setLoading(false);
       }
-
-      // Gọi API đăng nhập
-      const result = await login({
-        username: username.trim(),
-        password: password.trim()
-      });
-
-      console.log('Kết quả đăng nhập:', result);
-      console.log('Vai trò người dùng:', result.user?.role);
-
-      // Lưu thông tin đăng nhập
-      await AsyncStorage.setItem('user', JSON.stringify(result.user));
-      await AsyncStorage.setItem('access_token', result.tokens.access);
-      if (result.tokens.refresh) {
-        await AsyncStorage.setItem('refresh_token', result.tokens.refresh);
-      }
-
-      // Cập nhật UserContext
-      await userLogin(result.user, result.tokens.access, result.user.role);
-
-      // Hiển thị thông báo thành công
-      Alert.alert(
-        'Đăng nhập thành công',
-        `Xin chào ${result.user.username}!`,
-        [
-          {
-            text: 'OK',
-            onPress: () => {
-              // Không cần navigation.reset() vì UserContext sẽ tự động chuyển hướng
-              // dựa trên isLoggedIn và userRole
-            }
-          }
-        ]
-      );
-
-    } catch (error) {
-      console.error('Lỗi đăng nhập:', error);
-      setErrorMsg(error.message || 'Đăng nhập thất bại. Vui lòng thử lại.');
-    } finally {
-      setIsLoading(false);
     }
-  };
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -101,10 +90,10 @@ export default function LoginScreen({ navigation }) {
         behavior={Platform.OS === 'ios' ? 'padding' : null}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
       >
-        <ScrollView 
+        <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={[authStyles.scrollContainer, { paddingBottom: 40 }]}
-          keyboardShouldPersistTaps="never" 
+          keyboardShouldPersistTaps="never"
           showsVerticalScrollIndicator={false}
           bounces={false}
         >
@@ -112,14 +101,12 @@ export default function LoginScreen({ navigation }) {
             <View style={{ width: '100%' }}>
               <Image source={require('../../assets/icon.png')} style={authStyles.logo} />
               <Text style={authStyles.title}>Đăng nhập</Text>
-              
-              {/* Hiển thị lỗi nếu có */}
+
               {errorMsg ? (
                 <Text style={authStyles.errorText}>{errorMsg}</Text>
               ) : null}
 
-              {/* Trường Tên người dùng */}
-              <TextInput
+              {/* <TextInput
                 label="Tên người dùng"
                 value={username}
                 placeholder="VD: nguyenvana"
@@ -134,7 +121,6 @@ export default function LoginScreen({ navigation }) {
                 error={errorMsg && !username}
               />
 
-              {/* Trường Mật khẩu */}
               <TextInput
                 label="Mật khẩu"
                 value={password}
@@ -153,15 +139,18 @@ export default function LoginScreen({ navigation }) {
                 style={authStyles.input}
                 theme={{ colors: { background: theme.colors.background } }}
                 error={errorMsg && !password}
-              />
-
-              {/* Nút Đăng nhập */}
+              /> */}
+              {info.map(i => <TextInput value={user[i.field]}
+                onChangeText={t => setState(t, i.field)}
+                style={authStyles.input} key={`${i.label}${i.field}`}
+                label={i.label} secureTextEntry={i.secureTextEntry}
+                right={<TextInput.Icon icon={i.icon} />} />)}
               <TouchableOpacity
-                style={[authStyles.button, isLoading && authStyles.disabledButton]}
+                style={[authStyles.button, loading && authStyles.disabledButton]}
                 onPress={handleLogin}
-                disabled={isLoading}
+                disabled={loading}
               >
-                {isLoading ? (
+                {loading ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
                   <Text style={authStyles.buttonText}>Đăng nhập</Text>
@@ -184,7 +173,7 @@ export default function LoginScreen({ navigation }) {
               </View>
 
               {/* Liên kết tới màn hình đăng ký */}
-              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+              <TouchableOpacity onPress={() => nav.navigate('Register')}>
                 <Text style={authStyles.registerLink}>Chưa có tài khoản? Đăng ký</Text>
               </TouchableOpacity>
             </View>

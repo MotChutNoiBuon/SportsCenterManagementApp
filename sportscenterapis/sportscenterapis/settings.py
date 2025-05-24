@@ -14,8 +14,13 @@ from pathlib import Path
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+from dotenv import load_dotenv
+import os
+
+from dotenv import load_dotenv
 
 import sportscenters.apps
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -33,21 +38,12 @@ SECRET_KEY = 'django-insecure-1kmf*mbweh)9#qp7#m_$1_ij+6)f26pvr0^t$8z)r73(vc$+y%
 DEBUG = True
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 2,
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
     ),
 }
 
 OAUTH2_PROVIDER = { 'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore' }
-
-#CLIENT_ID = 'LMInXkXTRpviiIyZ2hQWhIs8hsb26ohoycbcCUPF'
-#CLIENT_SECRET = 'pbkdf2_sha256$870000$Ua5mLPx4x5WvfXxsvqapXc$wEg/nSahdzjgt5HcEHT6KjFP9VcZIRZzkGB5uYCSsO4='
-# Cua Loc
-CLIENT_ID = '7RphfNKj71H9i3uaIN9ps6GKtMCxDHWtjWiEPWPI'
-CLIENT_SECRET = 'BTK3xttEJH15ynjVKTC5CRQZsqoZIRUkQHt62rkfGlWoYWDogJfbe5WAJkH4PIIK8wlDqw0tENo2b6zMgwodBjITTEyVpgYnduteXcvHNvJVqpbpOLlsHktDkkXjzowP'
-
 
 # Application definition
 
@@ -65,8 +61,6 @@ INSTALLED_APPS = [
     'ckeditor_uploader',
     'oauth2_provider',
     'rest_framework',
-    'django_extensions',
-    'rest_framework.authtoken'
 ]
 
 MIDDLEWARE = [
@@ -127,7 +121,6 @@ DATABASES = {
         'HOST': ''
     }
 }
-OAUTH2_PROVIDER = {'OAUTH2_BACKEND_CLASS': 'oauth2_provider.oauth2_backends.JSONOAuthLibCore'}
 import pymysql
 
 pymysql.install_as_MySQLdb()
@@ -187,6 +180,11 @@ CORS_ALLOWED_ORIGINS = [
     'http://10.0.2.2:8000',
     'http://192.168.2.16:8000',
     'http://192.168.157.52:8000', # Phone Loc
-    'http://192.168.20.162:8000'
+    'http://192.168.20.162:8000',
+    'http://127.0.0.1:8000',
+    'http://192.168.2.9:8000'
 ]
-ALLOWED_HOSTS = ['192.168.20.162', '192.168.157.52', '192.168.2.16', 'localhost', '127.0.0.1','10.0.2.2']
+ALLOWED_HOSTS = ['*']
+
+CLIENT_ID = '7RphfNKj71H9i3uaIN9ps6GKtMCxDHWtjWiEPWPI'
+CLIENT_SECRET = 'BTK3xttEJH15ynjVKTC5CRQZsqoZIRUkQHt62rkfGlWoYWDogJfbe5WAJkH4PIIK8wlDqw0tENo2b6zMgwodBjITTEyVpgYnduteXcvHNvJVqpbpOLlsHktDkkXjzowP'

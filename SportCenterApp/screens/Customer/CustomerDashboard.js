@@ -8,43 +8,127 @@ import {
   Image,
   FlatList,
   RefreshControl,
-  Alert
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getClasses, getUpcomingClasses, getRecommendedClasses } from '../../api/classService';
+import { getUserProfile } from '../../api/userService';
 import { logout } from '../../api/authService';
 import LessonCard from '../../components/LessonCard';
 
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  state = { hasError: false, error: null };
+  
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+  
+  render() {
+    if (this.state.hasError) {
+      return (
+        <View style={styles.errorContainer}>
+          <Icon name="error-outline" size={50} color="#F44336" />
+          <Text style={styles.errorTitle}>Đã có lỗi xảy ra</Text>
+          <Text style={styles.errorMessage}>
+            {this.state.error?.message || 'Vui lòng thử lại sau'}
+          </Text>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => this.setState({ hasError: false })}
+          >
+            <Text style={styles.retryButtonText}>Thử lại</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+// Retry mechanism
+const loadDataWithRetry = async (fetchFn, maxRetries = 3) => {
+  let retries = 0;
+  while (retries < maxRetries) {
+    try {
+      return await fetchFn();
+    } catch (error) {
+      retries++;
+      if (retries === maxRetries) throw error;
+      await new Promise(resolve => setTimeout(resolve, 1000 * retries));
+    }
+  }
+};
+
 const CustomerDashboard = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [upcomingClasses, setUpcomingClasses] = useState([]);
   const [recommendedClasses, setRecommendedClasses] = useState([]);
-  const [categories] = useState([
+  const [categories, setCategories] = useState([
     { id: 'all', name: 'Tất cả', icon: 'view-list' },
-    { id: 'yoga', name: 'Yoga', icon: 'self-improvement' },
-    { id: 'gym', name: 'Gym', icon: 'sports-handball' },
-    { id: 'dacce', name: 'Nhảy', icon: 'sports-mma' },
-    { id: 'swimming', name: 'Bơi lội', icon: 'pool' },
   ]);
   const [activeCategory, setActiveCategory] = useState('all');
   const [userData, setUserData] = useState(null);
   
   useEffect(() => {
-    loadUserData();
-    loadClassData();
+    loadInitialData();
   }, []);
+
+  const loadInitialData = async () => {
+    setIsLoading(true);
+    try {
+      await Promise.all([
+        loadUserData(),
+        loadClassData()
+      ]);
+    } catch (error) {
+      console.error('Lỗi khi tải dữ liệu ban đầu:', error);
+      Alert.alert('Lỗi', 'Không thể tải dữ liệu. Vui lòng thử lại sau.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const loadUserData = async () => {
     try {
-      const userDataString = await AsyncStorage.getItem('userData');
-      if (userDataString) {
-        const userData = JSON.parse(userDataString);
-        setUserData(userData);
-      }
+      const profileData = await loadDataWithRetry(() => getUserProfile());
+      setUserData(profileData);
+      
+      // Update categories based on available class types
+      const classTypes = await loadDataWithRetry(() => getClasses());
+      const uniqueCategories = [...new Set(classTypes.map(cls => cls.category))];
+      const categoryIcons = {
+        'yoga': 'self-improvement',
+        'gym': 'sports-handball',
+        'dance': 'sports-mma',
+        'swimming': 'pool',
+        'boxing': 'sports-kabaddi',
+        'pilates': 'fitness-center',
+        'zumba': 'music-note',
+        'crossfit': 'fitness-center',
+      };
+      
+      const newCategories = [
+        { id: 'all', name: 'Tất cả', icon: 'view-list' },
+        ...uniqueCategories.map(category => ({
+          id: category.toLowerCase(),
+          name: category.charAt(0).toUpperCase() + category.slice(1),
+          icon: categoryIcons[category.toLowerCase()] || 'fitness-center'
+        }))
+      ];
+      
+      setCategories(newCategories);
     } catch (error) {
       console.error('Lỗi khi tải dữ liệu người dùng:', error);
+      throw error; // Let the error boundary handle it
     }
   };
 
@@ -52,15 +136,15 @@ const CustomerDashboard = ({ navigation }) => {
     setRefreshing(true);
     try {
       const [upcomingData, recommendedData] = await Promise.all([
-        getUpcomingClasses(),
-        getRecommendedClasses()
+        loadDataWithRetry(() => getUpcomingClasses()),
+        loadDataWithRetry(() => getRecommendedClasses())
       ]);
       
       setUpcomingClasses(upcomingData);
       setRecommendedClasses(recommendedData);
     } catch (error) {
       console.error('Lỗi khi tải dữ liệu lớp học:', error);
-      Alert.alert('Lỗi', 'Không thể tải dữ liệu lớp học. Vui lòng thử lại sau.');
+      throw error; // Let the error boundary handle it
     } finally {
       setRefreshing(false);
     }
@@ -126,149 +210,171 @@ const CustomerDashboard = ({ navigation }) => {
     </TouchableOpacity>
   );
 
+  const filteredRecommendedClasses = recommendedClasses.filter(
+    (item) => activeCategory === 'all' || item.category.toLowerCase() === activeCategory
+  );
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#4A90E2" />
+        <Text style={styles.loadingText}>Đang tải dữ liệu...</Text>
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Xin chào,</Text>
-            <Text style={styles.userName}>{userData ? userData.firstName + ' ' + userData.lastName : 'Khách hàng'}</Text>
-          </View>
-          <View style={styles.headerButtons}>
-            <TouchableOpacity 
-              style={styles.notificationButton}
-              onPress={() => navigation.navigate('Notifications')}
-            >
-              <Icon name="notifications" size={24} color="#333" />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.profileButton}
-              onPress={() => navigation.navigate('Profile')}
-            >
-              <Image
-                source={{ uri: userData?.avatar || 'https://i.pravatar.cc/300' }}
-                style={styles.profileImage}
-              />
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Quick actions */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('ClassList')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#E8F3FF' }]}>
-              <Icon name="event" size={24} color="#4A90E2" />
-            </View>
-            <Text style={styles.actionText}>Lớp học</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('MySchedule')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#FFF2E3' }]}>
-              <Icon name="schedule" size={24} color="#FF9500" />
-            </View>
-            <Text style={styles.actionText}>Lịch của tôi</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('Progress')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#E6F9E8' }]}>
-              <Icon name="trending-up" size={24} color="#4CAF50" />
-            </View>
-            <Text style={styles.actionText}>Tiến độ</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={handleLogout}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#FFEBEE' }]}>
-              <Icon name="logout" size={24} color="#F44336" />
-            </View>
-            <Text style={styles.actionText}>Đăng xuất</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Upcoming classes */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Lớp học sắp tới</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('MyClasses')}>
-              <Text style={styles.seeAllButton}>Xem tất cả</Text>
-            </TouchableOpacity>
-          </View>
-
-          {upcomingClasses.length > 0 ? (
-            upcomingClasses.map((item) => (
-              <LessonCard
-                key={item.id}
-                lesson={item}
-                onPress={() => handleClassPress(item)}
-              />
-            ))
-          ) : (
-            <View style={styles.emptyState}>
-              <Icon name="event-busy" size={50} color="#ccc" />
-              <Text style={styles.emptyStateText}>
-                Bạn chưa đăng ký lớp học nào
+    <ErrorBoundary>
+      <SafeAreaView style={styles.container}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+        >
+          {/* Header */}
+          <View style={styles.header}>
+            <View>
+              <Text style={styles.greeting}>Xin chào,</Text>
+              <Text style={styles.userName}>
+                {userData ? `${userData.firstName} ${userData.lastName}` : 'Khách hàng'}
               </Text>
-              <TouchableOpacity
-                style={styles.bookButton}
-                onPress={() => navigation.navigate('ClassList')}
+            </View>
+            <View style={styles.headerButtons}>
+              <TouchableOpacity 
+                style={styles.notificationButton}
+                onPress={() => navigation.navigate('Notifications')}
               >
-                <Text style={styles.bookButtonText}>Tìm lớp học</Text>
+                <Icon name="notifications" size={24} color="#333" />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.profileButton}
+                onPress={() => navigation.navigate('Profile')}
+              >
+                <Image
+                  source={{ uri: userData?.avatar || 'https://i.pravatar.cc/300' }}
+                  style={styles.profileImage}
+                />
               </TouchableOpacity>
             </View>
-          )}
-        </View>
+          </View>
 
-        {/* Categories */}
-        <View style={styles.categoriesContainer}>
-          <FlatList
-            data={categories}
-            renderItem={renderCategoryItem}
-            keyExtractor={(item) => item.id}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-          />
-        </View>
-
-        {/* Recommended classes */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Gợi ý dành cho bạn</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('ClassList')}>
-              <Text style={styles.seeAllButton}>Xem tất cả</Text>
+          {/* Quick actions */}
+          <View style={styles.quickActions}>
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => navigation.navigate('ClassList')}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: '#E8F3FF' }]}>
+                <Icon name="event" size={24} color="#4A90E2" />
+              </View>
+              <Text style={styles.actionText}>Lớp học</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => navigation.navigate('MySchedule')}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: '#FFF2E3' }]}>
+                <Icon name="schedule" size={24} color="#FF9500" />
+              </View>
+              <Text style={styles.actionText}>Lịch của tôi</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={() => navigation.navigate('Progress')}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: '#E6F9E8' }]}>
+                <Icon name="trending-up" size={24} color="#4CAF50" />
+              </View>
+              <Text style={styles.actionText}>Tiến độ</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.actionButton}
+              onPress={handleLogout}
+            >
+              <View style={[styles.actionIcon, { backgroundColor: '#FFEBEE' }]}>
+                <Icon name="logout" size={24} color="#F44336" />
+              </View>
+              <Text style={styles.actionText}>Đăng xuất</Text>
             </TouchableOpacity>
           </View>
 
-          {recommendedClasses
-            .filter(
-              (item) => activeCategory === 'all' || item.category === activeCategory
-            )
-            .map((item) => (
-              <LessonCard
-                key={item.id}
-                lesson={item}
-                onPress={() => handleClassPress(item)}
-              />
-            ))}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+          {/* Upcoming classes */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Lớp học sắp tới</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('MyClasses')}>
+                <Text style={styles.seeAllButton}>Xem tất cả</Text>
+              </TouchableOpacity>
+            </View>
+
+            {upcomingClasses.length > 0 ? (
+              upcomingClasses.map((item) => (
+                <LessonCard
+                  key={item.id}
+                  lesson={item}
+                  onPress={() => handleClassPress(item)}
+                />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Icon name="event-busy" size={50} color="#ccc" />
+                <Text style={styles.emptyStateText}>
+                  Bạn chưa đăng ký lớp học nào
+                </Text>
+                <TouchableOpacity
+                  style={styles.bookButton}
+                  onPress={() => navigation.navigate('ClassList')}
+                >
+                  <Text style={styles.bookButtonText}>Tìm lớp học</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          {/* Categories */}
+          <View style={styles.categoriesContainer}>
+            <FlatList
+              data={categories}
+              renderItem={renderCategoryItem}
+              keyExtractor={(item) => item.id}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+            />
+          </View>
+
+          {/* Recommended classes */}
+          <View style={styles.sectionContainer}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Gợi ý dành cho bạn</Text>
+              <TouchableOpacity onPress={() => navigation.navigate('ClassList')}>
+                <Text style={styles.seeAllButton}>Xem tất cả</Text>
+              </TouchableOpacity>
+            </View>
+
+            {filteredRecommendedClasses.length > 0 ? (
+              filteredRecommendedClasses.map((item) => (
+                <LessonCard
+                  key={item.id}
+                  lesson={item}
+                  onPress={() => handleClassPress(item)}
+                />
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <Icon name="search-off" size={50} color="#ccc" />
+                <Text style={styles.emptyStateText}>
+                  Không tìm thấy lớp học phù hợp
+                </Text>
+              </View>
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </ErrorBoundary>
   );
 };
 
@@ -403,6 +509,48 @@ const styles = StyleSheet.create({
   },
   notificationButton: {
     padding: 8,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#666',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8f8f8',
+    padding: 20,
+  },
+  errorTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#F44336',
+    marginTop: 12,
+    marginBottom: 8,
+  },
+  errorMessage: {
+    fontSize: 16,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#4A90E2',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

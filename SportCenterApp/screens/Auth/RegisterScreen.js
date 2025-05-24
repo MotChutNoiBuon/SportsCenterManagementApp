@@ -4,9 +4,8 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Image, ScrollView, Alert, ActivityIndicator, KeyboardAvoidingView, Platform, SafeAreaView, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { TextInput } from 'react-native-paper';
 import * as ImagePicker from 'expo-image-picker';
-import { register } from '../../api/authService';
 import { authStyles, theme } from '../../styles';
-import { DEV_MODE } from '../../api/apiConfig';
+import apiConfig, { DEV_MODE, API_ENDPOINTS } from '../../api/apiConfig';
 
 export default function RegisterScreen({ navigation }) {
   const [first_name, setFirstName] = useState('');
@@ -59,35 +58,37 @@ export default function RegisterScreen({ navigation }) {
     return isValid;
   };
 
-  const handleRegister = async () => {
-    setErrorMsg('');
-    if (!validate()) return;
+    const handleRegister = async () => {
+        if (validate() === true) {
+            try {
+                setLoading(true);
 
-    try {
-      setIsRegistering(true);  // Bật trạng thái loading
+                let form = new FormData();
+                for (let key in user)
+                    if (key !== 'confirm') {
+                        if (key === 'avatar') {
+                            form.append(key, {
+                                uri: user.avatar.uri,
+                                name: user.avatar.fileName,
+                                type: user.avatar.type
+                            })
+                        } else
+                            form.append(key, user[key]);
+                    }
 
-      const userData = { username, password, email, first_name, last_name, phone, avatar };
-
-      let result;
-      if (DEV_MODE) {
-        result = await mockRegister(userData);
-      } else {
-        result = await register(userData);
-      }
-
-      Alert.alert('Đăng ký thành công', 'Vui lòng đăng nhập để tiếp tục!', [{ text: 'OK', onPress: () => navigation.navigate('Login') }]);
-    } catch (error) {
-      setErrorMsg('Đăng ký không thành công. Vui lòng thử lại sau.');
-    } finally {
-      setIsRegistering(false);  // Tắt trạng thái loading
+                await apiConfig.post(API_ENDPOINTS['register'], form, {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    }
+                });
+                nav.navigate('login');
+            } catch(ex) {
+                console.error(ex);
+            } finally {
+                setLoading(false);
+            }
+        }
     }
-  };
-
-  const mockRegister = async (userData) => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve(userData), 1500);
-    });
-  };
 
   const pickAvatar = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();

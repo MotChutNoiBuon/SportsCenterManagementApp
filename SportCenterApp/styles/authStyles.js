@@ -36,6 +36,7 @@ const authStyles = StyleSheet.create({
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: theme.spacing.xl,
+    color: "white"
   },
   
   // Form inputs

@@ -1,5 +1,5 @@
 import { API_BASE_URL, API_ENDPOINTS } from './apiConfig';
-import apiClient from './apiClient';
+import { apiClient } from './apiClient';
 
 export const getUserProfile = async () => {
   try {

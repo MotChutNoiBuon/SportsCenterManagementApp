@@ -7,40 +7,18 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import Class, Trainer, User, Progress,Receptionist,Payment,Member,Notification,Appointment,InternalNews,Enrollment, Statistic
 
-class LoginSerializer(serializers.Serializer):
-    username = serializers.CharField()
-    password = serializers.CharField(write_only=True)
-
-    def validate(self, data):
-        user = authenticate(**data)
-        if user and user.is_active:
-            refresh = RefreshToken.for_user(user)
-            return {
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }
-        raise serializers.ValidationError("Tài khoản hoặc mật khẩu không đúng.")
-
-class RegisterSerializer(serializers.ModelSerializer):
-    password2 = serializers.CharField(write_only=True)
-
+class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'password2', 'first_name', 'last_name', 'phone')
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone']
+        read_only_fields = ['id', 'username', 'email']
 
-    def validate(self, attrs):
-        if attrs['password'] != attrs.pop('password2'):
-            raise serializers.ValidationError({"password": "Mật khẩu không khớp."})
-        return attrs
-
-    def create(self, validated_data):
-        password = validated_data.pop('password')
-        user = User(**validated_data)
-        user.set_password(password)
-        user.save()
-        return user
-
+    def update(self, instance, validated_data):
+        instance.first_name = validated_data.get('first_name', instance.first_name)
+        instance.last_name = validated_data.get('last_name', instance.last_name)
+        instance.phone = validated_data.get('phone', instance.phone)
+        instance.save()
+        return instance
 
 class ClassSerializer(ModelSerializer):
     class Meta:
@@ -59,7 +37,6 @@ class UserSerializer(ModelSerializer):
         fields = '__all__'
         extra_kwargs = {
             'password': {'write_only': True},
-            'id': {'read_only': True},  # Không cho phép chỉnh sửa ID
         }
 
     def create(self, validated_data):

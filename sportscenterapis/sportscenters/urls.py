@@ -2,8 +2,6 @@ from django.urls import path, include
 from . import views
 from rest_framework import routers
 
-from .views import RegisterView, LoginView
-
 router = routers.DefaultRouter()
 router.register('users', views.UserViewSet, basename='user')
 router.register('members', views.MemberViewSet, basename='member')
@@ -17,9 +15,8 @@ router.register('payments', views.PaymentViewSet, basename='payment')
 router.register('notifications', views.NotificationViewSet, basename='notification')
 router.register('internalnews', views.InternalNewsViewSet, basename='internalnews')
 router.register(r'stats', views.StatisticViewSet, basename='stats')
+from .views import UserProfileView  
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('register/', RegisterView.as_view(), name='register'),
-    path('login/', LoginView.as_view(), name='login'),
-]
+    path('user/profile/', UserProfileView.as_view(), name='user-profile'),]

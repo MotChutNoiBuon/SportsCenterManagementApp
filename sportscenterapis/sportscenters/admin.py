@@ -259,16 +259,16 @@ class StatisticAdmin(admin.ModelAdmin):
     export_stats.short_description = "Export selected statistics to CSV"
 
 
-admin.site = MyAdminSite(name='myadmin')
+admin_site = MyAdminSite(name='myadmin')
 
-admin.site.register(Member, MemberAdmin)
-admin.site.register(Trainer, TrainerAdmin)
-admin.site.register(Receptionist, ReceptionistAdmin)
-admin.site.register(Class, ClassAdmin)
-admin.site.register(Enrollment, EnrollmentAdmin)
-admin.site.register(Progress, ProgressAdmin)
-admin.site.register(Appointment, AppointmentAdmin)
-admin.site.register(Payment, PaymentAdmin)
-admin.site.register(Notification, NotificationAdmin)
-admin.site.register(InternalNews, InternalNewsAdmin)
-admin.site.register(Statistic, StatisticAdmin)
+admin_site.register(Member, MemberAdmin)
+admin_site.register(Trainer, TrainerAdmin)
+admin_site.register(Receptionist, ReceptionistAdmin)
+admin_site.register(Class, ClassAdmin)
+admin_site.register(Enrollment, EnrollmentAdmin)
+admin_site.register(Progress, ProgressAdmin)
+admin_site.register(Appointment, AppointmentAdmin)
+admin_site.register(Payment, PaymentAdmin)
+admin_site.register(Notification, NotificationAdmin)
+admin_site.register(InternalNews, InternalNewsAdmin)
+admin_site.register(Statistic, StatisticAdmin)
