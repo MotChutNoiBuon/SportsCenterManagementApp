@@ -3,7 +3,7 @@ import axios from "axios"
 
 export const DEV_MODE = false;
 
-let BASE_URL = 'http://192.168.152.183:8000/'
+let BASE_URL = 'http://192.168.2.9:8000'
 
 export const OAUTH2_CONFIG = {
   client_id: '7RphfNKj71H9i3uaIN9ps6GKtMCxDHWtjWiEPWPI',

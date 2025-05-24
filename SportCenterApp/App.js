@@ -25,9 +25,8 @@ const StackNavigator = () => {
   const user = useContext(MyUserContext);
 
   return (
+    
       <Stack.Navigator>
-        {user === null ? (
-          <>
             <Stack.Screen
               name="Welcome"
               component={WelcomeScreen}
@@ -43,46 +42,30 @@ const StackNavigator = () => {
               component={RegisterScreen}
               options={{ title: 'Đăng ký' }}
             />
-          </>
-        ) : user.role === 'member' ? (
-          <>
+
             <Stack.Screen
               name="CustomerDashboard"
               component={CustomerDashboard}
-              options={{ headerShown: false }}
             />
-          </>
-        ) : user.role === 'trainer' ? (
-          <>
+
             <Stack.Screen
               name="TrainerDashboard"
               component={CoachDashboard}
               options={{ headerShown: false }}
             />
-          </>
-        ) : user.role === 'admin' ? (
-          <>
+
             <Stack.Screen
               name="AdminDashboard"
               component={AdminDashboard}
               options={{ headerShown: false }}
             />
-          </>
-        ) : user.role === 'receptionist' ? (
-          <>
+
             <Stack.Screen
               name="ReceptionistDashboard"
               component={AdminDashboard}
               options={{ headerShown: false }}
             />
-          </>
-        ) : (
-          <Stack.Screen
-            name="Welcome"
-            component={WelcomeScreen}
-            options={{ headerShown: false }}
-          />
-        )}
+ 
 
         <Stack.Screen
           name="Notifications"
