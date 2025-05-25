@@ -2,7 +2,7 @@ from rest_framework import viewsets, generics, status, parsers, permissions, fil
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from django.utils.timezone import now
-from sportscenters import paginators
+from sportscenters import paginators, perms, serializers
 from datetime import datetime, timedelta
 from django.db.models import Sum, Count
 from django.utils import timezone
@@ -65,25 +65,20 @@ class TrainerViewSet(viewsets.ModelViewSet):
 
 
 
-class UserViewSet(generics.UpdateAPIView, viewsets.ViewSet, generics.CreateAPIView):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [permissions.AllowAny]
-    pagination_class = paginators.StandardResultsSetPagination
+class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.UpdateAPIView):
+    queryset = User.objects.filter(is_active=True)
+    serializer_class = serializers.UserSerializer
+    parser_classes = [parsers.MultiPartParser]
 
-    @action(methods=['get', 'patch'], url_path='current-user', detail=False, permission_classes = [permissions.IsAuthenticated])
+    def get_permissions(self):
+        if self.request.method in ['PUT', 'PATCH']:
+            return [perms.OwnerPerms()]
+
+        return [permissions.AllowAny()]
+
+    @action(methods=['get'], url_path='current-user', detail=False, permission_classes=[permissions.IsAuthenticated])
     def get_current_user(self, request):
-        u = request.user
-        if request.method.__eq__('PATCH'):
-            for k, v in request.data.items():
-                if k in ['first_name', 'last_name']:
-                    setattr(u, k, v)
-                elif k.__eq__('password'):
-                    u.set_password(v)
-
-            u.save()
-
-        return Response(UserSerializer(u).data)
+        return Response(serializers.UserSerializer(request.user).data)
 
 
 from rest_framework.views import APIView

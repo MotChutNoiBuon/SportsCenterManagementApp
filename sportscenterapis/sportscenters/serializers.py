@@ -30,13 +30,17 @@ class TrainerSerializer(ModelSerializer):
         model = Trainer
         fields = '__all__'
 
-class UserSerializer(ModelSerializer):
+
+class UserSerializer(serializers.ModelSerializer):
     username = serializers.CharField(validators=[UniqueValidator(queryset=User.objects.all())])
+
     class Meta:
         model = User
-        fields = '__all__'
+        fields = ['first_name', 'last_name', 'username', 'password', 'avatar','phone','email']
         extra_kwargs = {
-            'password': {'write_only': True},
+            'password': {
+                'write_only': True
+            }
         }
 
     def create(self, validated_data):
@@ -48,13 +52,17 @@ class UserSerializer(ModelSerializer):
         return u
 
     def update(self, instance, validated_data):
-        password = validated_data.pop('password', None)
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        if password:
-            instance.set_password(password)
-        instance.save()
+        if 'password' in validated_data:
+            instance.set_password(validated_data['password'])
+            instance.save()
+
         return instance
+
+
+    def to_representation(self, instance):
+        d = super().to_representation(instance)
+        d['avatar'] = instance.avatar.url if instance.avatar else ''
+        return d
 
 
 class MemberSerializer(serializers.ModelSerializer):

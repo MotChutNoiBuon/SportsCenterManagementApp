@@ -14,6 +14,7 @@ from pathlib import Path
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+from django.conf.global_settings import DATA_UPLOAD_MAX_MEMORY_SIZE
 from dotenv import load_dotenv
 import os
 
@@ -174,7 +175,6 @@ CACHES = {
     }
 }
 
-
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://10.0.2.2:8000',
@@ -182,7 +182,9 @@ CORS_ALLOWED_ORIGINS = [
     'http://192.168.157.52:8000', # Phone Loc
     'http://192.168.20.162:8000',
     'http://127.0.0.1:8000',
-    'http://192.168.2.9:8000'
+    'http://192.168.2.9:8000',
+    'http://192.168.111.225:8000',
+    'http://192.168.20.232'
 ]
 ALLOWED_HOSTS = ['*']
 
