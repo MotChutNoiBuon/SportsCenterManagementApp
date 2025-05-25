@@ -5,6 +5,7 @@ export const DEV_MODE = false;
 
 let BASE_URL = 'http://192.168.20.232:8000/'
 
+
 export const OAUTH2_CONFIG = {
   client_id: '7RphfNKj71H9i3uaIN9ps6GKtMCxDHWtjWiEPWPI',
   client_secret: 'BTK3xttEJH15ynjVKTC5CRQZsqoZIRUkQHt62rkfGlWoYWDogJfbe5WAJkH4PIIK8wlDqw0tENo2b6zMgwodBjITTEyVpgYnduteXcvHNvJVqpbpOLlsHktDkkXjzowP',

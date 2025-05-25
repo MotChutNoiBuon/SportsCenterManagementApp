@@ -63,10 +63,12 @@ export default function LoginScreen( ) {
           'client_secret': 'BTK3xttEJH15ynjVKTC5CRQZsqoZIRUkQHt62rkfGlWoYWDogJfbe5WAJkH4PIIK8wlDqw0tENo2b6zMgwodBjITTEyVpgYnduteXcvHNvJVqpbpOLlsHktDkkXjzowP',
           'grant_type': 'password'
         });
+        console.info("Đăng nhập thành công2222!")
         console.info(res.data.access_token);
         console.info("Successfully logged in!");
         console.info("User data: ", res.data);
         await AsyncStorage.setItem('token', res.data.access_token);
+        
 
         console.info('The problem is here!')
         let u = await authApis(res.data.access_token).get(API_ENDPOINTS['current-user']);
@@ -74,7 +76,9 @@ export default function LoginScreen( ) {
           "type": "login",
           "payload": u.data
         });
-        nav.navigate("Welcome");
+        console.info(u.data)
+        console.info("Đăng nhập thành công!")
+        nav.navigate("CustomerDashboard");
       } catch (ex) {
         console.error(ex);
       } finally {

@@ -98,7 +98,7 @@ class MemberAdmin(BaseUserAdmin):
     list_filter = ('payment_status', 'active')
     search_fields = ('full_name', 'payment_status')
     ordering = ['-created_date']
-    readonly_fields = ['role','avatar_preview']
+    readonly_fields = ['avatar_preview']
     fieldsets = (
         ('Thông tin tài khoản',
          {'fields': ('username','password' ,'full_name', 'email', 'role', 'phone', 'avatar', 'avatar_preview')}),
@@ -128,10 +128,10 @@ class TrainerAdmin(BaseUserAdmin):
     list_filter = ('specialization', 'active')
     search_fields = ('full_name', 'email', 'specialization')
     ordering = ['-created_date']
-    readonly_fields = ['role','avatar_preview']
+    readonly_fields = ['avatar_preview']
     fieldsets = (
         ('Thông tin tài khoản',
-         {'fields': ('username', 'password', 'full_name', 'email', 'role','specialization', 'phone', 'avatar', 'avatar_preview')}),
+         {'fields': ('username', 'password', 'full_name', 'email', 'role','specialization', 'experience_years', 'phone', 'avatar', 'avatar_preview')}),
         ('Trạng thái', {'fields': ('is_active',)})
     )
 
@@ -155,10 +155,10 @@ class ReceptionistAdmin(BaseUserAdmin):
     list_filter = ('work_shift', 'active')
     search_fields = ('full_name', 'email', 'work_shift')
     ordering = ['-created_date']
-    readonly_fields = ['role','avatar_preview']
+    readonly_fields = ['avatar_preview']
     fieldsets = (
         ('Thông tin tài khoản',
-         {'fields': ('username', 'password', 'full_name', 'email', 'role', 'phone', 'avatar', 'avatar_preview')}),
+         {'fields': ('username', 'password', 'full_name', 'email', 'role', 'work_shift', 'phone', 'avatar', 'avatar_preview')}),
         ('Trạng thái', {'fields': ('is_active',)}),
     )
     def avatar_preview(self, obj):
@@ -261,6 +261,7 @@ class StatisticAdmin(admin.ModelAdmin):
 
 admin_site = MyAdminSite(name='myadmin')
 
+admin_site.register(User, UserAdmin)
 admin_site.register(Member, MemberAdmin)
 admin_site.register(Trainer, TrainerAdmin)
 admin_site.register(Receptionist, ReceptionistAdmin)

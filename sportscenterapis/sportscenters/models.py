@@ -66,6 +66,10 @@ class Trainer(User):
     specialization = models.CharField(max_length=20, choices=SPECIALIZATIONS, null=True)
     experience_years = models.IntegerField(null=True)
 
+    def save(self, *args, **kwargs):
+        self.role = 'trainer'  # Tự động gán role là 'trainer'
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.username} - {self.specialization} ({self.experience_years} years)"
 

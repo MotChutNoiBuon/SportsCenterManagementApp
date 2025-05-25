@@ -14,7 +14,7 @@ import AdminDashboard from './screens/Admin/AdminDashboard';
 import NotificationScreen from './screens/Shared/NotificationScreen';
 import ProfileScreen from './screens/Shared/ProfileScreen';
 import ClassDetails from './screens/Shared/ClassDetails';
-import { MyDispatchContext, MyUserContext } from "./contexts/UserContext";
+import { MyDispatchContext, MyUserContext, UserProvider } from "./contexts/UserContext";
 import MyUserReducer from "./reducers/MyUserReducer";
 
 import { useContext, useReducer } from "react";
@@ -25,9 +25,8 @@ const StackNavigator = () => {
   const user = useContext(MyUserContext);
 
   return (
+    
       <Stack.Navigator>
-        {user === null ? (
-          <>
             <Stack.Screen
               name="Welcome"
               component={WelcomeScreen}
@@ -43,46 +42,30 @@ const StackNavigator = () => {
               component={RegisterScreen}
               options={{ title: 'Đăng ký' }}
             />
-          </>
-        ) : user.role === 'member' ? (
-          <>
+
             <Stack.Screen
               name="CustomerDashboard"
               component={CustomerDashboard}
-              options={{ headerShown: false }}
             />
-          </>
-        ) : user.role === 'trainer' ? (
-          <>
+
             <Stack.Screen
               name="TrainerDashboard"
               component={CoachDashboard}
               options={{ headerShown: false }}
             />
-          </>
-        ) : user.role === 'admin' ? (
-          <>
+
             <Stack.Screen
               name="AdminDashboard"
               component={AdminDashboard}
               options={{ headerShown: false }}
             />
-          </>
-        ) : user.role === 'receptionist' ? (
-          <>
+
             <Stack.Screen
               name="ReceptionistDashboard"
               component={AdminDashboard}
               options={{ headerShown: false }}
             />
-          </>
-        ) : (
-          <Stack.Screen
-            name="Welcome"
-            component={WelcomeScreen}
-            options={{ headerShown: false }}
-          />
-        )}
+ 
 
         <Stack.Screen
           name="Notifications"
@@ -108,6 +91,7 @@ const StackNavigator = () => {
 const App = () => {
   const [user, dispatch] = useReducer(MyUserReducer, null);
 
+  
   return (
     <MyUserContext.Provider value={user}>
       <MyDispatchContext.Provider value={dispatch}>
