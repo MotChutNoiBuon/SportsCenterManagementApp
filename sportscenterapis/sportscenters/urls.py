@@ -15,8 +15,6 @@ router.register('payments', views.PaymentViewSet, basename='payment')
 router.register('notifications', views.NotificationViewSet, basename='notification')
 router.register('internalnews', views.InternalNewsViewSet, basename='internalnews')
 router.register(r'stats', views.StatisticViewSet, basename='stats')
-from .views import UserProfileView  
-
 urlpatterns = [
     path('', include(router.urls)),
-    path('user/profile/', UserProfileView.as_view(), name='user-profile'),]
+    path('users/current-user/', views.UserViewSet.get_current_user, name='current_user'),  ]

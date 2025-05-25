@@ -46,8 +46,10 @@ const StackNavigator = () => {
             <Stack.Screen
               name="CustomerDashboard"
               component={CustomerDashboard}
-            />
+              options={{ title: 'Home' }}
 
+            />
+           
             <Stack.Screen
               name="TrainerDashboard"
               component={CoachDashboard}
