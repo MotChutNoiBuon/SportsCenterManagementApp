@@ -14,7 +14,7 @@ import AdminDashboard from './screens/Admin/AdminDashboard';
 import NotificationScreen from './screens/Shared/NotificationScreen';
 import ProfileScreen from './screens/Shared/ProfileScreen';
 import ClassDetails from './screens/Shared/ClassDetails';
-import { MyDispatchContext, MyUserContext } from "./contexts/UserContext";
+import { MyDispatchContext, MyUserContext, UserProvider } from "./contexts/UserContext";
 import MyUserReducer from "./reducers/MyUserReducer";
 
 import { useContext, useReducer } from "react";
@@ -91,6 +91,7 @@ const StackNavigator = () => {
 const App = () => {
   const [user, dispatch] = useReducer(MyUserReducer, null);
 
+  
   return (
     <MyUserContext.Provider value={user}>
       <MyDispatchContext.Provider value={dispatch}>
