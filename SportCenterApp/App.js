@@ -28,6 +28,7 @@ const StackNavigator = () => {
 
   return (
 
+<<<<<<< HEAD
     <Stack.Navigator>
       <Stack.Screen
         name="Welcome"
@@ -49,6 +50,20 @@ const StackNavigator = () => {
         name="CustomerDashboard"
         component={CustomerDashboard}
       />
+=======
+            <Stack.Screen
+              name="CustomerDashboard"
+              component={CustomerDashboard}
+              options={{ title: 'Home' }}
+
+            />
+           
+            <Stack.Screen
+              name="TrainerDashboard"
+              component={CoachDashboard}
+              options={{ headerShown: false }}
+            />
+>>>>>>> 2adc9d57c2ca1d23c3a175553d4da9a833ca7ec1
 
       <Stack.Screen
         name="TrainerDashboard"

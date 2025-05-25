@@ -5,7 +5,7 @@ export default async (current, action) => {
         case "login":
             return action.payload;
         case "logout":
-            await AsyncStorage.removeItem('token');
+            await AsyncStorage.removeItem("token");
             return null;
     }
 

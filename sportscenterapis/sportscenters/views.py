@@ -80,30 +80,6 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.UpdateAPIVi
     def get_current_user(self, request):
         return Response(serializers.UserSerializer(request.user).data)
 
-
-from rest_framework.views import APIView
-
-class UserProfileView(APIView):
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        """
-        - Nếu có query param `?id=...` thì trả về user tương ứng.
-        - Nếu không có thì trả về chính user đang đăng nhập.
-        """
-        user_id = request.query_params.get('id')
-
-        if user_id:
-            try:
-                user = User.objects.get(id=user_id)
-            except User.DoesNotExist:
-                return Response({'error': 'User not found'}, status=404)
-        else:
-            user = request.user
-
-        serializer = UserSerializer(user)
-        return Response(serializer.data)
-
 class MemberViewSet(viewsets.ModelViewSet):
     queryset = Member.objects.all()
     serializer_class = MemberSerializer
