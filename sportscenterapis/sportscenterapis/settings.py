@@ -14,7 +14,6 @@ from pathlib import Path
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
-from dotenv import load_dotenv
 import os
 
 from dotenv import load_dotenv
@@ -182,7 +181,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://192.168.157.52:8000', # Phone Loc
     'http://192.168.20.162:8000',
     'http://127.0.0.1:8000',
-    'http://192.168.2.9:8000'
+    'http://192.168.2.9:8000',
+    'http://192.168.20.89:8001'
 ]
 ALLOWED_HOSTS = ['*']
 
