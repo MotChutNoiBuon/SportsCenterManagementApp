@@ -9,33 +9,23 @@ const RegisterClass = ({ navigation }) => {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    getClasses();
-  }, []);
+useEffect(() => {
+  loadClasses();
+}, []);
 
-  const fetchClasses = async () => {
-    try {
-      const token = await AsyncStorage.getItem('access_token');
-      const response = await fetch(`${API_ENDPOINTS.classes}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        setClasses(data);
-      } else {
-        console.error('Failed to fetch classes');
-      }
-    } catch (error) {
-      console.error('Error fetching classes:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+const loadClasses = async () => {
+  setLoading(true);
+  try {
+    const data = await getClasses();
+    setClasses(data.results || data || []);
+  } catch (error) {
+    Alert.alert('Lỗi', 'Không thể tải danh sách lớp học. Vui lòng thử lại.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
 
   const renderClassItem = ({ item }) => (
     <View style={styles.classItem}>
