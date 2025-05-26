@@ -1,28 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  StyleSheet,
-  ActivityIndicator,
-  RefreshControl,
-  Alert,
-} from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import axios from 'axios';
-import Icon from 'react-native-vector-icons/MaterialIcons';
-import { useNavigation } from '@react-navigation/native';
-import { format } from 'date-fns';
-import { API_BASE_URL, OAUTH2_CONFIG } from './apiConfig';
+import { API_ENDPOINTS } from '../../api/apiConfig';
+import { getClasses } from '../../api/classService';
 
-const RegisterClass = () => {
+const RegisterClass = ({ navigation }) => {
   const [classes, setClasses] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const navigation = useNavigation();
-
-  const API_BASE_URL = 'http://your-backend-url/api'; // Thay bằng URL backend của bạn
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetchClasses();
@@ -30,134 +15,87 @@ const RegisterClass = () => {
 
   const fetchClasses = async () => {
     try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert('Lỗi', 'Vui lòng đăng nhập để xem danh sách lớp học.');
-        navigation.navigate('Login');
-        return;
-      }
-
-      const response = await axios.get(`${API_BASE_URL}/classes/`, {
+      const token = await AsyncStorage.getItem('access_token');
+      const response = await fetch(`${API_ENDPOINTS.classes}`, {
+        method: 'GET',
         headers: {
-          Authorization: `Bearer ${token}`,
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
         },
       });
-
-      setClasses(response.data.results || response.data); // Xử lý dữ liệu phân trang
-    } catch (error) {
-      console.error('Lỗi khi lấy danh sách lớp học:', error);
-      Alert.alert('Lỗi', 'Không thể tải danh sách lớp học. Vui lòng thử lại.');
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  const handleRegisterClass = async (classId) => {
-    try {
-      const token = await AsyncStorage.getItem('token');
-      if (!token) {
-        Alert.alert('Lỗi', 'Vui lòng đăng nhập để đăng ký lớp học.');
-        navigation.navigate('Login');
-        return;
+      
+      if (response.ok) {
+        const data = await response.json();
+        setClasses(data);
+      } else {
+        console.error('Failed to fetch classes');
       }
-
-      const response = await axios.post(
-        `${API_BASE_URL}/enrollments/`,
-        {
-          gym_class: classId,
-          status: 'pending',
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      Alert.alert('Thành công', 'Đăng ký lớp học thành công! Đang chờ phê duyệt.');
     } catch (error) {
-      console.error('Lỗi khi đăng ký lớp học:', error);
-      Alert.alert('Lỗi', 'Không thể đăng ký lớp học. Vui lòng thử lại.');
+      console.error('Error fetching classes:', error);
+    } finally {
+      setLoading(false);
     }
-  };
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchClasses();
   };
 
   const renderClassItem = ({ item }) => (
-    <View style={styles.classCard}>
-      <View style={styles.classHeader}>
+    <View style={styles.classItem}>
+      <View style={styles.classInfo}>
         <Text style={styles.className}>{item.name}</Text>
-        <Text style={[styles.classStatus, item.status === 'active' ? styles.activeStatus : styles.inactiveStatus]}>
-          {item.status === 'active' ? 'Đang mở' : item.status === 'cancelled' ? 'Đã hủy' : 'Hoàn thành'}
+        <Text style={styles.classDetails}>
+          Huấn luyện viên: {item.trainer?.user?.username || 'N/A'}
+        </Text>
+        <Text style={styles.classDetails}>
+          Thời gian: {new Date(item.start_time).toLocaleString()}
+        </Text>
+        <Text style={styles.classDetails}>
+          Giá: {item.price} VND
+        </Text>
+        <Text style={styles.classDetails}>
+          Trạng thái: {item.status}
         </Text>
       </View>
-      <Text style={styles.classDescription} numberOfLines={2}>
-        {item.description}
-      </Text>
-      <View style={styles.classDetails}>
-        <View style={styles.detailRow}>
-          <Icon name="schedule" size={20} color="#666" />
-          <Text style={styles.detailText}>
-            {format(new Date(item.schedule), 'dd/MM/yyyy HH:mm')}
-          </Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Icon name="person" size={20} color="#666" />
-          <Text style={styles.detailText}>
-            HLV: {item.trainer ? item.trainer.username : 'Chưa xác định'}
-          </Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Icon name="group" size={20} color="#666" />
-          <Text style={styles.detailText}>Tối đa: {item.max_members} thành viên</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Icon name="attach-money" size={20} color="#666" />
-          <Text style={styles.detailText}>{item.price} VND</Text>
-        </View>
-      </View>
-      {item.status === 'active' && (
-        <TouchableOpacity
-          style={styles.registerButton}
-          onPress={() => handleRegisterClass(item.id)}
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity 
+          style={[styles.button, styles.viewButton]}
+          onPress={() => navigation.navigate('ClassDetails', { classId: item.id })}
         >
-          <Text style={styles.registerButtonText}>Đăng ký</Text>
+          <Text style={styles.buttonText}>Xem</Text>
         </TouchableOpacity>
-      )}
+        <TouchableOpacity 
+          style={[styles.button, styles.registerButton]}
+        >
+          <Text style={styles.buttonText}>Đăng ký</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
-
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4A90E2" />
-        <Text style={styles.loadingText}>Đang tải danh sách lớp học...</Text>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Danh sách lớp học</Text>
+        <TouchableOpacity onPress={fetchClasses}>
+          <Ionicons name="refresh-outline" size={24} color="#2196f3" />
+        </TouchableOpacity>
       </View>
-      <FlatList
-        data={classes}
-        renderItem={renderClassItem}
-        keyExtractor={(item) => item.id.toString()}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Icon name="search-off" size={50} color="#ccc" />
-            <Text style={styles.emptyText}>Không tìm thấy lớp học nào</Text>
-          </View>
-        }
-      />
+      
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <Text>Đang tải...</Text>
+        </View>
+      ) : classes.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="calendar-outline" size={50} color="#ccc" />
+          <Text style={styles.emptyText}>Không có lớp học nào</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={classes}
+          renderItem={renderClassItem}
+          keyExtractor={(item) => item.id.toString()}
+          contentContainerStyle={styles.listContainer}
+        />
+      )}
     </View>
   );
 };
@@ -165,108 +103,81 @@ const RegisterClass = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#f5f5f5',
+    padding: 20,
   },
   header: {
-    padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  listContainer: {
-    padding: 16,
-  },
-  classCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    shadowOffset: { width: 0, height: 2 },
-  },
-  classHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  classItem: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  classInfo: {
+    flex: 1,
   },
   className: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
-  },
-  classStatus: {
-    fontSize: 14,
-    fontWeight: '500',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  activeStatus: {
-    backgroundColor: '#E6F9E8',
-    color: '#4CAF50',
-  },
-  inactiveStatus: {
-    backgroundColor: '#FFEBEE',
-    color: '#F44336',
-  },
-  classDescription: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 12,
+    marginBottom: 5,
   },
   classDetails: {
-    marginBottom: 12,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  detailText: {
     fontSize: 14,
     color: '#666',
-    marginLeft: 8,
+    marginBottom: 3,
   },
-  registerButton: {
-    backgroundColor: '#4A90E2',
-    paddingVertical: 12,
-    borderRadius: 8,
+  buttonContainer: {
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
+  button: {
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 5,
+    marginBottom: 5,
+    minWidth: 80,
     alignItems: 'center',
   },
-  registerButtonText: {
+  viewButton: {
+    backgroundColor: '#2196f3',
+  },
+  registerButton: {
+    backgroundColor: '#4caf50',
+  },
+  buttonText: {
     color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f8f8',
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#666',
   },
   emptyContainer: {
-    alignItems: 'center',
+    flex: 1,
     justifyContent: 'center',
-    padding: 24,
+    alignItems: 'center',
   },
   emptyText: {
-    fontSize: 16,
     color: '#666',
-    marginTop: 12,
+    marginTop: 10,
+    fontSize: 16,
+  },
+  listContainer: {
+    paddingBottom: 20,
   },
 });
 

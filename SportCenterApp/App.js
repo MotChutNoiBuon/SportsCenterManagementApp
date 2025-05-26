@@ -14,7 +14,7 @@ import AdminDashboard from './screens/Admin/AdminDashboard';
 import NotificationScreen from './screens/Shared/NotificationScreen';
 import ProfileScreen from './screens/Shared/ProfileScreen';
 import ClassDetails from './screens/Shared/ClassDetails';
-//import ... from './screens/Shared/RegisterClass';
+import RegisterClass from './screens/Shared/RegisterClass';
 
 import { MyDispatchContext, MyUserContext, UserProvider } from "./contexts/UserContext";
 import MyUserReducer from "./reducers/MyUserReducer";
@@ -28,7 +28,6 @@ const StackNavigator = () => {
 
   return (
 
-<<<<<<< HEAD
     <Stack.Navigator>
       <Stack.Screen
         name="Welcome"
@@ -46,24 +45,13 @@ const StackNavigator = () => {
         options={{ title: 'Đăng ký' }}
       />
 
+
       <Stack.Screen
         name="CustomerDashboard"
         component={CustomerDashboard}
-      />
-=======
-            <Stack.Screen
-              name="CustomerDashboard"
-              component={CustomerDashboard}
-              options={{ title: 'Home' }}
+        options={{ title: 'Home' }}
 
-            />
-           
-            <Stack.Screen
-              name="TrainerDashboard"
-              component={CoachDashboard}
-              options={{ headerShown: false }}
-            />
->>>>>>> 2adc9d57c2ca1d23c3a175553d4da9a833ca7ec1
+      />
 
       <Stack.Screen
         name="TrainerDashboard"
@@ -98,6 +86,11 @@ const StackNavigator = () => {
         name="ClassDetails"
         component={ClassDetails}
         options={{ title: 'Chi tiết lớp học' }}
+      />
+      <Stack.Screen
+        name="RegisterClass"
+        component={RegisterClass}
+        options={{ title: 'Danh sách lớp học' }}
       />
 
     </Stack.Navigator>

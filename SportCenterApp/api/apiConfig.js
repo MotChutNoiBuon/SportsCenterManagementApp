@@ -1,5 +1,6 @@
 import { Platform } from 'react-native';
 import axios from "axios"
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export const DEV_MODE = false;
 
@@ -38,9 +39,10 @@ export default axios.create({
 });
 const getCurrentUser = async () => {
   try {
+    const token = await AsyncStorage.getItem('access_token');
     const response = await axios.get(API_ENDPOINTS['current-user'], {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        Authorization: `Bearer ${token}`,
       },
     });
     return response.data; // Dữ liệu người dùng hiện tại
