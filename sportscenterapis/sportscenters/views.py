@@ -21,10 +21,20 @@ from rest_framework.response import Response
 from rest_framework import status
 
 class ClassViewSet(viewsets.ModelViewSet):
+    queryset = Class.objects.filter(active=True)
     serializer_class = ClassSerializer
-    permission_classes = [permissions.IsAuthenticated]
+
     pagination_class = paginators.StandardResultsSetPagination
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        id = self.request.query_params.get('id')
+        if id:
+            queryset = queryset.filter(id=id)
+
+        return queryset
+'''
     def get_queryset(self):
         if self.request.user.is_staff:
             return Class.objects.all()
@@ -46,6 +56,7 @@ class ClassViewSet(viewsets.ModelViewSet):
         instance.save()
         return Response({"message": f"Lớp học '{instance.name}' đã bị xóa mềm."}, status=200)
 
+
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAdminUser])
     def restore(self, request, pk=None):
         instance = self.get_object()
@@ -56,7 +67,7 @@ class ClassViewSet(viewsets.ModelViewSet):
         instance.deleted_at = None
         instance.save()
         return Response({"message": f"Lớp học '{instance.name}' đã được khôi phục."}, status=200)
-
+'''
 
 class TrainerViewSet(viewsets.ModelViewSet):
     queryset = Trainer.objects.all()

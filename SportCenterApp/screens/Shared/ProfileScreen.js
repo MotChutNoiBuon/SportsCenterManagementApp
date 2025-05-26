@@ -15,6 +15,7 @@ const ProfileScreen = ({ route }) => {
       <Text style={styles.email}>Email: {userData?.email || 'Không rõ email'}</Text>
       <Text style={styles.email}>Số điện thoại: {userData?.phone || 'Không rõ số điện thoại'}</Text>
 
+
     </View>
   );
 };

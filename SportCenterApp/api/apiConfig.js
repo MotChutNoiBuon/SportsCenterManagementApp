@@ -1,7 +1,6 @@
 import { Platform } from 'react-native';
 import axios from "axios"
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 export const DEV_MODE = false;
 
 let BASE_URL = 'http://192.168.2.9:8000'
@@ -53,10 +52,11 @@ const getCurrentUser = async () => {
 };
 
 // Sử dụng
-getCurrentUser()
-  .then((userData) => {
-    console.log('Người dùng hiện tại:', userData);
-  })
-  .catch((error) => {
-    console.error('Lỗi:', error);
-  });
+
+// getCurrentUser()
+//   .then((userData) => {
+//     console.log('Người dùng hiện tại:', userData);
+//   })
+//   .catch((error) => {
+//     console.error('Lỗi:', error);
+//   });

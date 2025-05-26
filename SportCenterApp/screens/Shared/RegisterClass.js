@@ -10,7 +10,7 @@ const RegisterClass = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchClasses();
+    getClasses();
   }, []);
 
   const fetchClasses = async () => {
@@ -74,7 +74,7 @@ const RegisterClass = ({ navigation }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Danh sách lớp học</Text>
-        <TouchableOpacity onPress={fetchClasses}>
+        <TouchableOpacity onPress={getClasses}>
           <Ionicons name="refresh-outline" size={24} color="#2196f3" />
         </TouchableOpacity>
       </View>

@@ -1,12 +1,12 @@
 import axios from 'axios';
 import { apiClient } from './apiClient';
-import { API_ENDPOINTS } from './apiConfig';
+import apiConfig ,{ API_ENDPOINTS } from './apiConfig';
 
 // Lấy danh sách lớp học
 export const getClasses = async () => {
   try {
     console.log('Gọi API lấy danh sách lớp học:', `${API_ENDPOINTS.classes}`);
-    const response = await apiClient.get(API_ENDPOINTS.classes);
+    const response = await apiConfig.get(API_ENDPOINTS.classes);
     console.log('Kết quả API lớp học:', response.data);
     return response.data;
   } catch (error) {
