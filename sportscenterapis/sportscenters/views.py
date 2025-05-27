@@ -106,12 +106,48 @@ class ReceptionistViewSet(viewsets.ModelViewSet):
     pagination_class = paginators.StandardResultsSetPagination
 
 
+from rest_framework.exceptions import ValidationError
+
+from django.db import transaction
+from rest_framework.exceptions import ValidationError
+
+
 class EnrollmentViewSet(viewsets.ModelViewSet):
+    """
+    ViewSet xử lý các thao tác CRUD cho đăng ký lớp học.
+    Chỉ cho phép người dùng xem và quản lý các đăng ký của họ.
+    """
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = paginators.StandardResultsSetPagination
 
+    def get_queryset(self):
+        """
+        Lọc các đăng ký chỉ hiển thị những đăng ký của người dùng hiện tại.
+        """
+        user = self.request.user
+        if hasattr(user, 'member'):
+            return self.queryset.filter(member=user.member)
+        return self.queryset.none()
+
+    @transaction.atomic
+    def perform_create(self, serializer):
+        """
+        Tạo bản ghi đăng ký mới, cập nhật sức chứa lớp học nếu cần.
+        """
+        user = self.request.user
+        if not hasattr(user, 'member'):
+            raise ValidationError("Người dùng không có hồ sơ thành viên.")
+
+        # Lưu bản ghi và cập nhật sức chứa
+        gym_class = serializer.validated_data['gym_class']
+        serializer.save(member=user.member)
+
+        # Cập nhật current_capacity của lớp học (nếu có)
+        if hasattr(gym_class, 'max_capacity') and hasattr(gym_class, 'current_capacity'):
+            gym_class.current_capacity += 1
+            gym_class.save()
 
 class ProgressViewSet(viewsets.ModelViewSet):
     queryset = Progress.objects.all()

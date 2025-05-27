@@ -3,12 +3,12 @@ import axios from "axios"
 import AsyncStorage from '@react-native-async-storage/async-storage';
 export const DEV_MODE = false;
 
-let BASE_URL = 'http://192.168.2.9:8000'
+let BASE_URL = 'http://192.168.1.6:8000'
 
 
 export const OAUTH2_CONFIG = {
-  client_id: '7RphfNKj71H9i3uaIN9ps6GKtMCxDHWtjWiEPWPI',
-  client_secret: 'BTK3xttEJH15ynjVKTC5CRQZsqoZIRUkQHt62rkfGlWoYWDogJfbe5WAJkH4PIIK8wlDqw0tENo2b6zMgwodBjITTEyVpgYnduteXcvHNvJVqpbpOLlsHktDkkXjzowP'
+   client_id: 'FUmqYnUhP0QfEGYJZ7opuvmpwBLySi09fUfR1hvc',
+  client_secret: '4wab4GxtWeKJogUa7DHPNZjHPHdCkfeWBZv4Ja6JruJaVTpIvIhAhbOsfjY4nvlBc3zYLAblz33I6B4RrWtUj1jHmeoApS8qrjzNZ29JihZelCMw18MssiuAVaX93euq'
 };
 
 export const API_ENDPOINTS = {
@@ -50,13 +50,3 @@ const getCurrentUser = async () => {
     throw error;
   }
 };
-
-// Sử dụng
-
-// getCurrentUser()
-//   .then((userData) => {
-//     console.log('Người dùng hiện tại:', userData);
-//   })
-//   .catch((error) => {
-//     console.error('Lỗi:', error);
-//   });

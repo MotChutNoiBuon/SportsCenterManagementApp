@@ -116,14 +116,39 @@ class Class(BaseModel):
         verbose_name_plural = 'Classes'
 
 # Bảng đăng ký lớp học
+from django.db import models
+
 class Enrollment(BaseModel):
-    member = models.ForeignKey(Member, on_delete=models.CASCADE)
-    gym_class = models.ForeignKey(Class, on_delete=models.CASCADE)
-    status = models.CharField(max_length=10, default='pending')
+    """
+    Model lưu trữ thông tin đăng ký lớp học của thành viên.
+    Mỗi bản ghi liên kết một thành viên với một lớp học và có trạng thái.
+    """
+    member = models.ForeignKey(
+        'Member',
+        on_delete=models.CASCADE,
+        verbose_name="Thành viên",
+        help_text="Thành viên đăng ký lớp học."
+    )
+    gym_class = models.ForeignKey(
+        'Class',
+        on_delete=models.CASCADE,
+        verbose_name="Lớp học",
+        help_text="Lớp học được đăng ký."
+    )
+    status = models.CharField(
+        max_length=10,
+        default='pending',
+        verbose_name="Trạng thái",
+        help_text="Trạng thái đăng ký (ví dụ: pending, confirmed)."
+    )
 
     def __str__(self):
         return f"{self.member.username} - {self.gym_class.name}"
 
+    class Meta:
+        unique_together = ('gym_class', 'member')
+        verbose_name = "Đăng ký"
+        verbose_name_plural = "Các đăng ký"
 
 # Bảng tiến độ tập luyện
 class Progress(BaseModel):
