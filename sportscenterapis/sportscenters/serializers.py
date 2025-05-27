@@ -1,6 +1,6 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password, check_password
-from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ModelSerializer, PrimaryKeyRelatedField
 from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -20,10 +20,25 @@ class UserProfileSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
+class TrainerShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trainer
+        fields = ['id', 'full_name', 'username', 'avatar']  # Thêm các trường bạn muốn trả về
+
+
 class ClassSerializer(ModelSerializer):
+    trainer = TrainerShortSerializer(read_only=True)
+    trainer_id = PrimaryKeyRelatedField(
+        queryset=Trainer.objects.all(),
+        source='trainer',
+        write_only=True
+    )
     class Meta:
         model = Class
-        fields = '__all__'
+        fields = ['id', 'name', 'description', 'trainer', 'trainer_id',
+            'start_time', 'end_time', 'max_members', 'status', 'price',
+            'active', 'created_date', 'updated_date']
 
 class TrainerSerializer(ModelSerializer):
     class Meta:

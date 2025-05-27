@@ -4,6 +4,7 @@ import apiConfig ,{ API_ENDPOINTS } from './apiConfig';
 
 // Lấy danh sách lớp học
 export const getClasses = async () => {
+  
   try {
     console.log('Gọi API lấy danh sách lớp học:', `${API_ENDPOINTS.classes}`);
     const response = await apiConfig.get(API_ENDPOINTS.classes);
@@ -20,7 +21,7 @@ export const getClasses = async () => {
 export const getClassDetails = async (classId) => {
   try {
     console.log('Gọi API lấy chi tiết lớp học:', `${API_ENDPOINTS.classes}${classId}/`);
-    const response = await apiClient.get(`${API_ENDPOINTS.classes}${classId}/`);
+    const response = await apiConfig.get(`${API_ENDPOINTS.classes}${classId}/`);
     console.log('Kết quả API chi tiết lớp học:', response.data);
     return response.data;
   } catch (error) {

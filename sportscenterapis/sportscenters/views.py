@@ -1,4 +1,5 @@
-from rest_framework import viewsets, generics, status, parsers, permissions, filters
+from rest_framework import viewsets, generics, status, parsers, permissions, filters, serializers
+from rest_framework.serializers import PrimaryKeyRelatedField
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from django.utils.timezone import now
@@ -23,8 +24,8 @@ from rest_framework import status
 class ClassViewSet(viewsets.ModelViewSet):
     queryset = Class.objects.filter(active=True)
     serializer_class = ClassSerializer
-
     pagination_class = paginators.StandardResultsSetPagination
+
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -34,6 +35,7 @@ class ClassViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(id=id)
 
         return queryset
+
 '''
     def get_queryset(self):
         if self.request.user.is_staff:
