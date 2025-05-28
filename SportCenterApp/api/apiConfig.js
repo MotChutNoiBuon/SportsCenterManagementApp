@@ -23,6 +23,9 @@ export const API_ENDPOINTS = {
   'appointments': '/appointments/',
   'payments': '/payments/',
   'notifications': '/notifications/',
+  'trainers': '/trainers/',
+  'members': '/members/',
+  'receptionists': '/receptionists/',
 };
 export const authApis = (token) => {
     return axios.create({

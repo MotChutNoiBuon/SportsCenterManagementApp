@@ -6,6 +6,8 @@ import LoginScreen from './screens/Auth/LoginScreen';
 import RegisterScreen from './screens/Auth/RegisterScreen';
 
 import CustomerDashboard from './screens/Customer/CustomerDashboard';
+import CoachList from './screens/Customer/CoachList';
+import CoachDetail from './screens/Customer/CoachDetail';
 
 import CoachDashboard from './screens/Coach/CoachDashboard';
 
@@ -27,7 +29,6 @@ const StackNavigator = () => {
   const user = useContext(MyUserContext);
 
   return (
-
     <Stack.Navigator>
       <Stack.Screen
         name="Welcome"
@@ -45,12 +46,22 @@ const StackNavigator = () => {
         options={{ title: 'Đăng ký' }}
       />
 
-
       <Stack.Screen
         name="CustomerDashboard"
         component={CustomerDashboard}
         options={{ title: 'Home' }}
+      />
 
+      <Stack.Screen
+        name="CoachList"
+        component={CoachList}
+        options={{ title: 'Danh sách huấn luyện viên' }}
+      />
+
+      <Stack.Screen
+        name="CoachDetail"
+        component={CoachDetail}
+        options={{ title: 'Thông tin huấn luyện viên' }}
       />
 
       <Stack.Screen
@@ -70,7 +81,6 @@ const StackNavigator = () => {
         component={AdminDashboard}
         options={{ headerShown: false }}
       />
-
 
       <Stack.Screen
         name="Notifications"
@@ -92,15 +102,12 @@ const StackNavigator = () => {
         component={RegisterClass}
         options={{ title: 'Danh sách lớp học' }}
       />
-
     </Stack.Navigator>
   );
 }
 
-
 const App = () => {
   const [user, dispatch] = useReducer(MyUserReducer, null);
-
 
   return (
     <MyUserContext.Provider value={user}>

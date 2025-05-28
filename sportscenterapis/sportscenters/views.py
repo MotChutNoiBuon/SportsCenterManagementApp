@@ -26,13 +26,20 @@ class ClassViewSet(viewsets.ModelViewSet):
     serializer_class = ClassSerializer
     pagination_class = paginators.StandardResultsSetPagination
 
-
     def get_queryset(self):
         queryset = super().get_queryset()
 
         id = self.request.query_params.get('id')
         if id:
             queryset = queryset.filter(id=id)
+
+        trainer_id = self.request.query_params.get('trainer_id')
+        if trainer_id:
+            queryset = queryset.filter(trainer_id=trainer_id)
+
+        status = self.request.query_params.get('status')
+        if status:
+            queryset = queryset.filter(status=status)
 
         return queryset
 
@@ -138,6 +145,90 @@ class NotificationViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = paginators.StandardResultsSetPagination
 
+    def get_queryset(self):
+        return Notification.objects.filter(member__user=self.request.user).order_by('-created_at')
+
+    @action(detail=True, methods=['patch'])
+    def mark_read(self, request, pk=None):
+        notification = self.get_object()
+        notification.is_read = True
+        notification.save()
+        return Response({'status': 'success'})
+
+    @action(detail=False, methods=['post'])
+    def mark_all_read(self, request):
+        self.get_queryset().update(is_read=True)
+        return Response({'status': 'success'})
+
+    @action(detail=False, methods=['post'])
+    def register_token(self, request):
+        push_token = request.data.get('push_token')
+        if not push_token:
+            return Response({'error': 'Push token is required'}, status=400)
+        
+        member = Member.objects.get(user=request.user)
+        member.push_token = push_token
+        member.save()
+        return Response({'status': 'success'})
+
+    def create(self, request, *args, **kwargs):
+        # This endpoint is used by admin to send notifications
+        if not request.user.is_staff:
+            return Response({'error': 'Permission denied'}, status=403)
+        
+        member_id = request.data.get('member')
+        message = request.data.get('message')
+        notification_type = request.data.get('type')
+        
+        if not all([member_id, message, notification_type]):
+            return Response({'error': 'Missing required fields'}, status=400)
+        
+        try:
+            member = Member.objects.get(id=member_id)
+            notification = Notification.objects.create(
+                member=member,
+                message=message,
+                type=notification_type
+            )
+            
+            # Send push notification if member has a push token
+            if member.push_token:
+                self.send_push_notification(member.push_token, message, notification_type)
+            
+            return Response(self.get_serializer(notification).data)
+        except Member.DoesNotExist:
+            return Response({'error': 'Member not found'}, status=404)
+
+    def send_push_notification(self, push_token, message, notification_type):
+        try:
+            from firebase_admin import messaging
+            
+            # Create notification message
+            notification = messaging.Notification(
+                title=self.get_notification_title(notification_type),
+                body=message
+            )
+            
+            # Create message
+            message = messaging.Message(
+                notification=notification,
+                token=push_token
+            )
+            
+            # Send message
+            response = messaging.send(message)
+            print('Successfully sent message:', response)
+        except Exception as e:
+            print('Error sending push notification:', str(e))
+
+    def get_notification_title(self, notification_type):
+        if notification_type == 'class_schedule':
+            return 'Lịch học'
+        elif notification_type == 'promotion':
+            return 'Khuyến mãi'
+        elif notification_type == 'reminder':
+            return 'Nhắc nhở'
+        return 'Thông báo mới'
 
 class InternalNewsViewSet(viewsets.ModelViewSet):
     queryset = InternalNews.objects.all()

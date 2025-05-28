@@ -64,6 +64,12 @@ const CustomerDashboard = () => {
           </View>
           <Text style={styles.navText}>Lớp học</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('CoachList')}>
+          <View style={[styles.iconContainer, { backgroundColor: '#f3e5f5' }]}>
+            <Ionicons name="fitness-outline" size={24} color="#9c27b0" />
+          </View>
+          <Text style={styles.navText}>Huấn luyện viên</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Schedule')}>
           <View style={[styles.iconContainer, { backgroundColor: '#fff3e0' }]}>
             <Ionicons name="time-outline" size={24} color="#ff9800" />

@@ -40,12 +40,12 @@ class Member(User):
     payment_status = models.CharField(max_length=10, default='unpaid')
     join_date = models.DateField(null=True, blank=True)
     cancellation_date = models.DateField(null=True, blank=True)
+    push_token = models.CharField(max_length=255, blank=True, null=True)
 
     def save(self, *args, **kwargs):
         if not self.join_date and self.payment_status == 'paid':
             self.join_date = timezone.now().date()
         super().save(*args, **kwargs)
-
 
     def __str__(self):
         return f"{self.username} - {self.payment_status}"

@@ -1,107 +1,130 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_ENDPOINTS } from '../../api/apiConfig';
 
 const NotificationScreen = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Mock data - In a real app, this would come from an API or Firebase
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      setNotifications([
-        {
-          id: '1',
-          title: 'Lớp học sắp bắt đầu',
-          message: 'Lớp Yoga của bạn sẽ bắt đầu trong 30 phút nữa.',
-          time: '10:30 AM',
-          date: '15/10/2023',
-          read: false,
-          type: 'class',
-        },
-        {
-          id: '2',
-          title: 'Thanh toán thành công',
-          message: 'Gói tập 3 tháng của bạn đã được thanh toán thành công.',
-          time: '2:45 PM',
-          date: '14/10/2023',
-          read: true,
-          type: 'payment',
-        },
-        {
-          id: '3',
-          title: 'Đánh giá huấn luyện viên',
-          message: 'Hãy đánh giá buổi tập với HLV Nguyễn Văn A',
-          time: '6:20 PM',
-          date: '13/10/2023',
-          read: false,
-          type: 'feedback',
-        },
-        {
-          id: '4',
-          title: 'Khuyến mãi mới',
-          message: 'Giảm 20% cho gói tập 6 tháng khi đăng ký trong tuần này.',
-          time: '9:00 AM',
-          date: '12/10/2023',
-          read: true,
-          type: 'promotion',
-        },
-        {
-          id: '5',
-          title: 'Thay đổi lịch tập',
-          message: 'Lớp Zumba vào thứ 5 đã được dời sang 18:00',
-          time: '3:15 PM',
-          date: '11/10/2023',
-          read: false,
-          type: 'schedule',
-        },
-      ]);
-      setLoading(false);
-    }, 1000);
+    fetchNotifications();
   }, []);
 
-  const markAsRead = (id) => {
-    setNotifications(
-      notifications.map((notification) =>
-        notification.id === id ? { ...notification, read: true } : notification
-      )
-    );
+  const fetchNotifications = async () => {
+    try {
+      const accessToken = await AsyncStorage.getItem('access_token');
+      const response = await axios.get(API_ENDPOINTS.notifications, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      setNotifications(response.data.results);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      Alert.alert('Lỗi', 'Không thể tải thông báo. Vui lòng thử lại.');
+      setLoading(false);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(
-      notifications.map((notification) => ({ ...notification, read: true }))
-    );
+  const markAsRead = async (id) => {
+    try {
+      const accessToken = await AsyncStorage.getItem('access_token');
+      await axios.patch(
+        `${API_ENDPOINTS.notifications}${id}/mark-read/`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      setNotifications(
+        notifications.map((notification) =>
+          notification.id === id ? { ...notification, is_read: true } : notification
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      Alert.alert('Lỗi', 'Không thể đánh dấu thông báo đã đọc. Vui lòng thử lại.');
+    }
   };
 
-  const deleteNotification = (id) => {
-    setNotifications(
-      notifications.filter((notification) => notification.id !== id)
-    );
+  const markAllAsRead = async () => {
+    try {
+      const accessToken = await AsyncStorage.getItem('access_token');
+      await axios.post(
+        `${API_ENDPOINTS.notifications}mark-all-read/`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+      setNotifications(
+        notifications.map((notification) => ({ ...notification, is_read: true }))
+      );
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      Alert.alert('Lỗi', 'Không thể đánh dấu tất cả thông báo đã đọc. Vui lòng thử lại.');
+    }
+  };
+
+  const deleteNotification = async (id) => {
+    try {
+      const accessToken = await AsyncStorage.getItem('access_token');
+      await axios.delete(`${API_ENDPOINTS.notifications}${id}/`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      setNotifications(
+        notifications.filter((notification) => notification.id !== id)
+      );
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      Alert.alert('Lỗi', 'Không thể xóa thông báo. Vui lòng thử lại.');
+    }
   };
 
   const getIconForType = (type) => {
     switch (type) {
-      case 'class':
+      case 'class_schedule':
         return 'fitness-center';
-      case 'payment':
-        return 'payment';
-      case 'feedback':
-        return 'rate-review';
       case 'promotion':
         return 'local-offer';
-      case 'schedule':
+      case 'reminder':
         return 'event';
       default:
         return 'notifications';
     }
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
+  };
+
+  const formatTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   const renderItem = ({ item }) => (
     <TouchableOpacity
-      style={[styles.notificationItem, item.read ? styles.readItem : styles.unreadItem]}
+      style={[styles.notificationItem, item.is_read ? styles.readItem : styles.unreadItem]}
       onPress={() => markAsRead(item.id)}
     >
       <View style={styles.iconContainer}>
@@ -109,11 +132,12 @@ const NotificationScreen = () => {
       </View>
       <View style={styles.contentContainer}>
         <View style={styles.headerRow}>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.time}>{item.time}</Text>
+          <Text style={styles.title}>{item.type === 'class_schedule' ? 'Lịch học' : 
+            item.type === 'promotion' ? 'Khuyến mãi' : 'Nhắc nhở'}</Text>
+          <Text style={styles.time}>{formatTime(item.created_at)}</Text>
         </View>
         <Text style={styles.message}>{item.message}</Text>
-        <Text style={styles.date}>{item.date}</Text>
+        <Text style={styles.date}>{formatDate(item.created_at)}</Text>
       </View>
       <TouchableOpacity
         style={styles.deleteButton}
@@ -136,7 +160,7 @@ const NotificationScreen = () => {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Thông báo</Text>
-        {notifications.some((n) => !n.read) && (
+        {notifications.some((n) => !n.is_read) && (
           <TouchableOpacity style={styles.markAllButton} onPress={markAllAsRead}>
             <Text style={styles.markAllText}>Đánh dấu tất cả đã đọc</Text>
           </TouchableOpacity>
@@ -147,8 +171,10 @@ const NotificationScreen = () => {
         <FlatList
           data={notifications}
           renderItem={renderItem}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id.toString()}
           contentContainerStyle={styles.listContainer}
+          refreshing={loading}
+          onRefresh={fetchNotifications}
         />
       ) : (
         <View style={styles.emptyContainer}>

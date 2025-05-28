@@ -32,7 +32,7 @@ const loadClasses = async () => {
       <View style={styles.classInfo}>
         <Text style={styles.className}>{item.name}</Text>
         <Text style={styles.classDetails}>
-          Huấn luyện viên: {item.trainer?.user?.username || 'N/A'}
+          Huấn luyện viên: {item.trainer?.full_name || 'N/A'}
         </Text>
         <Text style={styles.classDetails}>
           Thời gian: {new Date(item.start_time).toLocaleString()}
