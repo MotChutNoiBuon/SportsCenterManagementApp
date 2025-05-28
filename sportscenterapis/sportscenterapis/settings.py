@@ -182,7 +182,8 @@ CORS_ALLOWED_ORIGINS = [
     'http://192.168.20.162:8000',
     'http://127.0.0.1:8000',
     'http://192.168.2.9:8000',
-    'http://192.168.20.89:8001'
+    'http://192.168.20.89:8001',
+    'http://192.168.1.6:8000'
 ]
 ALLOWED_HOSTS = ['*']
 
@@ -193,3 +194,4 @@ ALLOWED_HOSTS = ['*']
 CLIENT_ID = '7RphfNKj71H9i3uaIN9ps6GKtMCxDHWtjWiEPWPI'
 CLIENT_SECRET = 'BTK3xttEJH15ynjVKTC5CRQZsqoZIRUkQHt62rkfGlWoYWDogJfbe5WAJkH4PIIK8wlDqw0tENo2b6zMgwodBjITTEyVpgYnduteXcvHNvJVqpbpOLlsHktDkkXjzowP'
 DATA_UPLOAD_MAX_MEMORY_SIZE = 15 * 1024 * 1024  # 10MB (hoặc hơn nếu cần)
+
