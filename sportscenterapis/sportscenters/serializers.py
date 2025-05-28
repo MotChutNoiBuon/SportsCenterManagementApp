@@ -102,8 +102,8 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Enrollment
-        fields = ['id', 'gym_class', 'status', 'created_at', 'updated_at']
-        read_only_fields = ['status', 'created_at', 'updated_at']
+        fields = ['id', 'gym_class', 'status', 'created_date', 'updated_date']
+        read_only_fields = ['status', 'created_date', 'updated_date']
 
     def validate(self, data):
         """
@@ -134,8 +134,7 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         """
         Tạo bản ghi Enrollment với member được gán từ người dùng hiện tại.
         """
-        member = self.context['request'].user.member
-        return Enrollment.objects.create(member=member, **validated_data)
+        return Enrollment.objects.create(**validated_data)
 
 class ProgressSerializer(serializers.ModelSerializer):
     class Meta:
