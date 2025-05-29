@@ -201,7 +201,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
         push_token = request.data.get('push_token')
         if not push_token:
             return Response({'error': 'Push token is required'}, status=400)
-        
+
         member = Member.objects.get(user=request.user)
         member.push_token = push_token
         member.save()
@@ -211,14 +211,14 @@ class NotificationViewSet(viewsets.ModelViewSet):
         # This endpoint is used by admin to send notifications
         if not request.user.is_staff:
             return Response({'error': 'Permission denied'}, status=403)
-        
+
         member_id = request.data.get('member')
         message = request.data.get('message')
         notification_type = request.data.get('type')
-        
+
         if not all([member_id, message, notification_type]):
             return Response({'error': 'Missing required fields'}, status=400)
-        
+
         try:
             member = Member.objects.get(id=member_id)
             notification = Notification.objects.create(
@@ -226,36 +226,15 @@ class NotificationViewSet(viewsets.ModelViewSet):
                 message=message,
                 type=notification_type
             )
-            
+
             # Send push notification if member has a push token
             if member.push_token:
                 self.send_push_notification(member.push_token, message, notification_type)
-            
+
             return Response(self.get_serializer(notification).data)
         except Member.DoesNotExist:
             return Response({'error': 'Member not found'}, status=404)
 
-    def send_push_notification(self, push_token, message, notification_type):
-        try:
-            from firebase_admin import messaging
-            
-            # Create notification message
-            notification = messaging.Notification(
-                title=self.get_notification_title(notification_type),
-                body=message
-            )
-            
-            # Create message
-            message = messaging.Message(
-                notification=notification,
-                token=push_token
-            )
-            
-            # Send message
-            response = messaging.send(message)
-            print('Successfully sent message:', response)
-        except Exception as e:
-            print('Error sending push notification:', str(e))
 
     def get_notification_title(self, notification_type):
         if notification_type == 'class_schedule':

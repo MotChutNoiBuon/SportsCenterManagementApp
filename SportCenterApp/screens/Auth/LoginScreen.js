@@ -19,7 +19,7 @@ import { TextInput } from 'react-native-paper';
 import { authStyles, theme } from '../../styles';
 import { MyDispatchContext } from '../../contexts/UserContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import apiConfig, { API_ENDPOINTS, authApis } from '../../api/apiConfig';
+import apiConfig, { API_ENDPOINTS, authApis, OAUTH2_CONFIG } from '../../api/apiConfig';
 import { useNavigation } from "@react-navigation/native";
 
 export default function LoginScreen() {
@@ -66,8 +66,8 @@ export default function LoginScreen() {
       try {
         const res = await apiConfig.post(API_ENDPOINTS['login'], {
           ...user,
-          client_id: '7RphfNKj71H9i3uaIN9ps6GKtMCxDHWtjWiEPWPI',
-          client_secret: 'BTK3xttEJH15ynjVKTC5CRQZsqoZIRUkQHt62rkfGlWoYWDogJfbe5WAJkH4PIIK8wlDqw0tENo2b6zMgwodBjITTEyVpgYnduteXcvHNvJVqpbpOLlsHktDkkXjzowP',
+          client_id: OAUTH2_CONFIG.client_id,
+          client_secret: OAUTH2_CONFIG.client_secret,
           grant_type: 'password'
         });
 

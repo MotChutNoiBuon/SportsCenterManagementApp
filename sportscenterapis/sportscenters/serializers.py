@@ -5,7 +5,9 @@ from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Class, Trainer, User, Progress,Receptionist,Payment,Member,Notification,Appointment,InternalNews,Enrollment, Statistic
+from .models import Class, Trainer, User, Progress, Receptionist, Payment, Member, Notification, Appointment, \
+    InternalNews, Enrollment, Statistic
+
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -34,11 +36,13 @@ class ClassSerializer(ModelSerializer):
         source='trainer',
         write_only=True
     )
+
     class Meta:
         model = Class
         fields = ['id', 'name', 'description', 'trainer', 'trainer_id',
-            'start_time', 'end_time', 'max_members', 'status', 'price',
-            'active', 'created_date', 'updated_date']
+                  'start_time', 'end_time', 'max_members', 'status', 'price',
+                  'active', 'created_date', 'updated_date']
+
 
 class TrainerSerializer(ModelSerializer):
     class Meta:
@@ -51,7 +55,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'username', 'password', 'avatar','phone','email']
+        fields = ['first_name', 'last_name', 'username', 'password', 'avatar', 'phone', 'email']
         extra_kwargs = {
             'password': {
                 'write_only': True
@@ -59,20 +63,27 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        data = validated_data.copy()
-        u = User(**data)
-        u.set_password(u.password)
-        u.save()
+        password = validated_data.pop('password')
+        avatar = validated_data.pop('avatar', None)
 
-        return u
+        # Gán role là member
+        validated_data['role'] = 'member'
+
+        # Tạo Member đúng cách (Django sẽ tự tạo bản ghi User phía dưới)
+        member = Member(**validated_data)
+        member.set_password(password)
+        if avatar:
+            member.avatar = avatar
+        member.payment_status = 'unpaid'
+        member.save()
+
+        return member
 
     def update(self, instance, validated_data):
         if 'password' in validated_data:
             instance.set_password(validated_data['password'])
             instance.save()
-
         return instance
-
 
     def to_representation(self, instance):
         d = super().to_representation(instance)
@@ -84,6 +95,15 @@ class MemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Member
         fields = '__all__'
+
+    def create(self, validated_data):
+        data = validated_data.copy()
+        # Set role to member by default
+        data['role'] = 'member'
+        u = Member(**data)
+        u.save()
+        return u
+
 
 class ReceptionistSerializer(serializers.ModelSerializer):
     class Meta:
@@ -102,8 +122,8 @@ class EnrollmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Enrollment
-        fields = ['id', 'gym_class', 'status', 'created_at', 'updated_at']
-        read_only_fields = ['status', 'created_at', 'updated_at']
+        fields = ['id', 'gym_class', 'status', 'created_date', 'updated_date']
+        read_only_fields = ['status', 'created_date', 'updated_date']
 
     def validate(self, data):
         """
@@ -134,33 +154,38 @@ class EnrollmentSerializer(serializers.ModelSerializer):
         """
         Tạo bản ghi Enrollment với member được gán từ người dùng hiện tại.
         """
-        member = self.context['request'].user.member
-        return Enrollment.objects.create(member=member, **validated_data)
+        return Enrollment.objects.create(**validated_data)
+
 
 class ProgressSerializer(serializers.ModelSerializer):
     class Meta:
         model = Progress
         fields = '__all__'
 
+
 class AppointmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
         fields = '__all__'
+
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = '__all__'
 
+
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = '__all__'
 
+
 class InternalNewsSerializer(serializers.ModelSerializer):
     class Meta:
         model = InternalNews
         fields = '__all__'
+
 
 class StatisticSerializer(serializers.ModelSerializer):
     class Meta:
