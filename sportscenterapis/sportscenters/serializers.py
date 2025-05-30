@@ -51,25 +51,32 @@ class TrainerSerializer(ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
+    password2 = serializers.CharField(write_only=True)
     username = serializers.CharField(validators=[UniqueValidator(queryset=User.objects.all())])
+    email = serializers.EmailField(validators=[UniqueValidator(queryset=User.objects.all())])
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'username', 'password', 'avatar', 'phone', 'email']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'full_name', 'phone', 'password', 'role', 'password2', 'avatar']
         extra_kwargs = {
-            'password': {
-                'write_only': True
-            }
+            'password': {'write_only': True},
+            'avatar': {'required': False}
         }
+
+    def validate(self, data):
+        if data['password'] != data['password2']:
+            raise serializers.ValidationError({"password": "Mật khẩu không khớp."})
+        return data
 
     def create(self, validated_data):
         password = validated_data.pop('password')
+        validated_data.pop('password2')  # Remove password2 as it's not needed
         avatar = validated_data.pop('avatar', None)
 
-        # Gán role là member
+        # Set role to member
         validated_data['role'] = 'member'
 
-        # Tạo Member đúng cách (Django sẽ tự tạo bản ghi User phía dưới)
+        # Create Member
         member = Member(**validated_data)
         member.set_password(password)
         if avatar:
@@ -81,14 +88,23 @@ class UserSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         if 'password' in validated_data:
+            if 'password2' not in validated_data:
+                raise serializers.ValidationError({"password2": "Cần xác nhận mật khẩu."})
+            if validated_data['password'] != validated_data['password2']:
+                raise serializers.ValidationError({"password": "Mật khẩu không khớp."})
             instance.set_password(validated_data['password'])
-            instance.save()
+            validated_data.pop('password')
+            validated_data.pop('password2')
+        
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
         return instance
 
     def to_representation(self, instance):
-        d = super().to_representation(instance)
-        d['avatar'] = instance.avatar.url if instance.avatar else ''
-        return d
+        data = super().to_representation(instance)
+        data['avatar'] = instance.avatar.url if instance.avatar else None
+        return data
 
 
 class MemberSerializer(serializers.ModelSerializer):

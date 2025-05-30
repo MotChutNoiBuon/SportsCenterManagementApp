@@ -76,18 +76,26 @@ export default function LoginScreen() {
         await AsyncStorage.setItem('isLoggedIn', 'true');
 
         const u = await authApis(res.data.access_token).get(API_ENDPOINTS['current-user']);
-
+        
+        // Log toàn bộ response data để debug
+        console.log('Current user data:', u.data);
+        
         dispatch({
           type: 'login',
           payload: u.data
         });
 
         // Điều hướng theo role (nếu có)
+        console.log('User role:', u.data.role);
+        
         if (u.data.role === 'customer') {
+          console.log('Navigating to CustomerDashboard');
           nav.navigate("CustomerDashboard");
         } else if (u.data.role === 'trainer') {
+          console.log('Navigating to CoachDashboard');
           nav.navigate("CoachDashboard");
         } else {
+          console.log('Navigating to default dashboard');
           nav.navigate("CustomerDashboard");
         }
       } catch (ex) {
