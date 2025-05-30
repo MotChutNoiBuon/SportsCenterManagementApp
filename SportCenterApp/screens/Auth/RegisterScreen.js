@@ -1,6 +1,6 @@
 // src/screens/Auth/RegisterScreen.js
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, TouchableOpacity, Image, ScrollView, Alert,
   ActivityIndicator, KeyboardAvoidingView, Platform,
@@ -15,6 +15,7 @@ export default function RegisterScreen({ navigation }) {
   const [first_name, setFirstName] = useState('');
   const [last_name, setLastName] = useState('');
   const [username, setUsername] = useState('');
+  const [full_name, setFullname] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -25,6 +26,12 @@ export default function RegisterScreen({ navigation }) {
   const [phone, setPhone] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [errors, setErrors] = useState({});
+
+  // Tự động cập nhật full_name khi first_name hoặc last_name thay đổi
+  useEffect(() => {
+    const fullName = `${first_name} ${last_name}`.trim();
+    setFullname(fullName);
+  }, [first_name, last_name]);
 
   const validate = () => {
     const newErrors = {};
@@ -75,6 +82,7 @@ export default function RegisterScreen({ navigation }) {
     return isValid;
   };
   
+  
   const handleRegister = async () => {
     if (!validate()) return;
 
@@ -85,11 +93,13 @@ export default function RegisterScreen({ navigation }) {
       const form = new FormData();
       form.append('first_name', first_name);
       form.append('last_name', last_name);
+      form.append('full_name', full_name);
       form.append('username', username);
       form.append('email', email);
       form.append('password', password);
       form.append('password2', confirmPassword);  // sửa ở đây
       form.append('phone', phone);
+      form.append('role', 'member');  // Thêm role mặc định là member
       
       if (avatar) {
         form.append('avatar', {

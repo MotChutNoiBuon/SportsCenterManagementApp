@@ -3,7 +3,7 @@ import axios from "axios"
 import AsyncStorage from '@react-native-async-storage/async-storage';
 export const DEV_MODE = false;
 
-let BASE_URL = 'http://192.168.1.9:8000/'
+let BASE_URL = 'http://192.168.3.14:8000/'
 
 
 export const OAUTH2_CONFIG = {

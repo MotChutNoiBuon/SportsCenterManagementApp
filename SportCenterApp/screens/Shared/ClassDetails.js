@@ -4,12 +4,14 @@ import {
   Text, 
   StyleSheet, 
   ScrollView, 
-  ActivityIndicator 
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import CustomButton from '../../components/CustomButton';
 import { getClassDetails, enrollClass } from '../../api/classService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ClassDetails = ({ route, navigation }) => {
   const { classId } = route.params;
@@ -28,7 +30,7 @@ const ClassDetails = ({ route, navigation }) => {
       setClassData(data);
     } catch (error) {
       console.error('Lỗi khi tải thông tin lớp học:', error);
-      alert('Không thể tải thông tin lớp học. Vui lòng thử lại sau.');
+      Alert.alert('Lỗi', 'Không thể tải thông tin lớp học. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
@@ -38,11 +40,24 @@ const ClassDetails = ({ route, navigation }) => {
     if (!classData || enrolling) return;
     setEnrolling(true);
     try {
-      await enrollClass(classData.id);
-      alert('Đăng ký thành công!');
-      // Có thể điều hướng hoặc reload lại dữ liệu
+      const token = await AsyncStorage.getItem('access_token');
+      if (!token) {
+        Alert.alert('Lỗi', 'Vui lòng đăng nhập để đăng ký lớp học');
+        return;
+      }
+
+      const result = await enrollClass(classData.id);
+      console.log('Kết quả đăng ký:', result);
+
+      if (result.status === 'already_enrolled') {
+        Alert.alert('Thông báo', result.message);
+      } else if (result.status === 'success') {
+        Alert.alert('Thành công', 'Đăng ký lớp học thành công!');
+        loadClassData(); // Reload thông tin lớp học
+      }
     } catch (error) {
-      alert('Đăng ký thất bại. Vui lòng thử lại.');
+      console.error('Lỗi khi đăng ký:', error);
+      Alert.alert('Lỗi', error.message || 'Đăng ký thất bại. Vui lòng thử lại.');
     } finally {
       setEnrolling(false);
     }
