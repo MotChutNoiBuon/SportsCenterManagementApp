@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { API_ENDPOINTS } from '../../api/apiConfig';
-import { getClasses } from '../../api/classService';
+import { getClasses, enrollClass } from '../../api/classService';
 
 const RegisterClass = ({ navigation }) => {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [enrolling, setEnrolling] = useState(false);
 
 useEffect(() => {
   loadClasses();
@@ -25,48 +26,87 @@ const loadClasses = async () => {
   }
 };
 
+const handleEnroll = async (classId) => {
+  if (enrolling) return;
+  setEnrolling(true);
+  try {
+    const token = await AsyncStorage.getItem('access_token');
+    if (!token) {
+      Alert.alert('Lỗi', 'Vui lòng đăng nhập để đăng ký lớp học');
+      return;
+    }
 
+    console.log('Bắt đầu đăng ký lớp học với ID:', classId);
+    const result = await enrollClass(classId);
+    console.log('Kết quả đăng ký:', result);
 
-  const renderClassItem = ({ item }) => (
-    <View style={styles.classItem}>
-      <View style={styles.classInfo}>
-        <Text style={styles.className}>{item.name}</Text>
-        <Text style={styles.classDetails}>
-          Huấn luyện viên: {item.trainer?.full_name || 'N/A'}
-        </Text>
-        <Text style={styles.classDetails}>
-          Thời gian: {new Date(item.start_time).toLocaleString()}
-        </Text>
-        <Text style={styles.classDetails}>
-          Giá: {item.price} VND
-        </Text>
-        <Text style={styles.classDetails}>
-          Trạng thái: {item.status}
-        </Text>
-      </View>
-      <View style={styles.buttonContainer}>
-        <TouchableOpacity 
-          style={[styles.button, styles.viewButton]}
-          onPress={() => navigation.navigate('ClassDetails', { classId: item.id })}
-        >
-          <Text style={styles.buttonText}>Xem</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.button, styles.registerButton]}
-        >
-          <Text style={styles.buttonText}>Đăng ký</Text>
-        </TouchableOpacity>
-      </View>
+    if (result.status === 'already_enrolled') {
+      Alert.alert('Thông báo', result.message);
+    } else if (result.status === 'success') {
+      Alert.alert('Thành công', 'Đăng ký lớp học thành công!');
+      loadClasses(); // Reload danh sách lớp học
+    }
+  } catch (error) {
+    console.error('Lỗi khi đăng ký:', error);
+    Alert.alert('Lỗi', error.message || 'Đã có lỗi xảy ra khi đăng ký lớp học');
+  } finally {
+    setEnrolling(false);
+  }
+};
+
+const renderClassItem = ({ item }) => (
+  <View style={styles.classItem}>
+    <View style={styles.classInfo}>
+      <Text style={styles.className}>{item.name}</Text>
+      <Text style={styles.classDetails}>
+        Huấn luyện viên: {item.trainer?.full_name || 'N/A'}
+      </Text>
+      <Text style={styles.classDetails}>
+        Thời gian: {new Date(item.start_time).toLocaleString()}
+      </Text>
+      <Text style={styles.classDetails}>
+        Giá: {item.price} VND
+      </Text>
+      <Text style={styles.classDetails}>
+        Trạng thái: {item.status || 'N/A'}
+      </Text>
     </View>
-  );
+    <View style={styles.buttonContainer}>
+      <TouchableOpacity 
+        style={[styles.button, styles.viewButton]}
+        onPress={() => navigation.navigate('ClassDetails', { classId: item.id })}
+      >
+        <Text style={styles.buttonText}>Xem</Text>
+      </TouchableOpacity>
+      <TouchableOpacity 
+        style={[styles.button, styles.registerButton]}
+        onPress={() => handleEnroll(item.id)}
+        disabled={enrolling || !item || item.status !== 'active'}
+      >
+        <Text style={styles.buttonText}>
+          {enrolling ? 'Đang đăng ký...' : 'Đăng ký'}
+        </Text>
+      </TouchableOpacity>
+    </View>
+  </View>
+);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Danh sách lớp học</Text>
-        <TouchableOpacity onPress={getClasses}>
-          <Ionicons name="refresh-outline" size={24} color="#2196f3" />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity 
+            style={styles.enrolledButton}
+            onPress={() => navigation.navigate('EnrolledClasses')}
+          >
+            <Ionicons name="list" size={24} color="#2196f3" />
+            <Text style={styles.enrolledButtonText}>Lớp đã đăng ký</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={loadClasses}>
+            <Ionicons name="refresh-outline" size={24} color="#2196f3" />
+          </TouchableOpacity>
+        </View>
       </View>
       
       {loading ? (
@@ -105,6 +145,20 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+  },
+  enrolledButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  enrolledButtonText: {
+    color: '#2196f3',
+    fontSize: 16,
   },
   classItem: {
     backgroundColor: '#fff',

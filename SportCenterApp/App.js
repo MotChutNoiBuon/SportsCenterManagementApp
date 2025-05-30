@@ -17,7 +17,7 @@ import NotificationScreen from './screens/Shared/NotificationScreen';
 import ProfileScreen from './screens/Shared/ProfileScreen';
 import ClassDetails from './screens/Shared/ClassDetails';
 import RegisterClass from './screens/Shared/RegisterClass';
-
+import EnrolledClasses from './screens/Shared/EnrolledClasses';
 import { MyDispatchContext, MyUserContext, UserProvider } from "./contexts/UserContext";
 import MyUserReducer from "./reducers/MyUserReducer";
 
@@ -101,6 +101,11 @@ const StackNavigator = () => {
         name="RegisterClass"
         component={RegisterClass}
         options={{ title: 'Danh sách lớp học' }}
+      />
+      <Stack.Screen
+        name="EnrolledClasses"
+        component={EnrolledClasses}
+        options={{ title: 'Lớp học đã đăng ký' }}
       />
     </Stack.Navigator>
   );
