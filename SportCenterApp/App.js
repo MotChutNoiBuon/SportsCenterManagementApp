@@ -18,6 +18,8 @@ import { MyDispatchContext, MyUserContext, UserProvider } from "./contexts/UserC
 import MyUserReducer from "./reducers/MyUserReducer";
 
 import { useContext, useReducer } from "react";
+import MyClasses from './screens/Coach/MyClasses';
+import ClassStudents from './screens/Coach/ClassStudents';
 
 const Stack = createNativeStackNavigator();
 
@@ -85,7 +87,46 @@ const StackNavigator = () => {
           options={{ title: 'Chi tiết lớp học' }}
         />
 
+<<<<<<< Updated upstream
       </Stack.Navigator>
+=======
+      <Stack.Screen
+        name="Notifications"
+        component={NotificationScreen}
+        options={{ title: 'Thông báo' }}
+      />
+      <Stack.Screen
+        name="Profile"
+        component={ProfileScreen}
+        options={{ title: 'Thông tin cá nhân' }}
+      />
+      <Stack.Screen
+        name="ClassDetails"
+        component={ClassDetails}
+        options={{ title: 'Chi tiết lớp học' }}
+      />
+      <Stack.Screen
+        name="MyClasses"
+        component={MyClasses}
+        options={{ title: 'Danh sách lớp học' }}
+      />
+      <Stack.Screen
+        name="RegisterClass"
+        component={RegisterClass}
+        options={{ title: 'Danh sách lớp học' }}
+      />
+      <Stack.Screen
+        name="EnrolledClasses"
+        component={EnrolledClasses}
+        options={{ title: 'Lớp học đã đăng ký' }}
+      />
+      <Stack.Screen
+        name="ClassStudents"
+        component={ClassStudents}
+        options={{ title: 'Danh sách học viên' }}
+      />
+    </Stack.Navigator>
+>>>>>>> Stashed changes
   );
 }
 

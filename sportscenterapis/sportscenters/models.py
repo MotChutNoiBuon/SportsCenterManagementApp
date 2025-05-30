@@ -101,7 +101,13 @@ class Class(BaseModel):
     name = models.CharField(max_length=100)
     description = models.TextField()
     trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE)
+<<<<<<< Updated upstream
     schedule = models.DateTimeField()
+=======
+    start_time = models.DateTimeField(null=True)
+    end_time = models.DateTimeField()
+    current_capacity = models.PositiveIntegerField(default=0)
+>>>>>>> Stashed changes
     max_members = models.IntegerField()
     status = models.CharField(max_length=20, choices=[('active', 'Active'), ('cancelled', 'Cancelled'), ('completed', 'Completed')])
     price = models.DecimalField(max_digits=10, decimal_places=2)
