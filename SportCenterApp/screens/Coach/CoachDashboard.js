@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,17 @@ import {
   Image,
   FlatList,
   RefreshControl,
+  Alert,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Icon from 'react-native-vector-icons/MaterialIcons';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { MyUserContext } from '../../contexts/UserContext';
+import { API_ENDPOINTS, authApis } from '../../api/apiConfig';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const CoachDashboard = ({ navigation }) => {
+const CoachDashboard = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [todayClasses, setTodayClasses] = useState([]);
   const [upcomingClasses, setUpcomingClasses] = useState([]);
@@ -23,107 +29,100 @@ const CoachDashboard = ({ navigation }) => {
     completedClasses: 0,
     upcomingClasses: 0,
   });
+  const [isLoading, setIsLoading] = useState(true);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
-  // Mock data
+  const navigation = useNavigation();
+  const currentUser = useContext(MyUserContext);
+  const userData = currentUser._j;
+
+  const getDisplayName = () => {
+    if (userData?.first_name && userData?.last_name) {
+      return `${userData.first_name} ${userData.last_name}`;
+    }
+    return userData?.username || 'Huấn luyện viên';
+  };
+
+  const handleAvatarPress = () => {
+    navigation.navigate('Profile', { userData }); // userData là current user
+  };
+
   useEffect(() => {
     loadData();
-  }, []);
+  }, [userData]);
 
-  const loadData = () => {
-    // In a real app, you would fetch this data from your API or Firebase
-    setRefreshing(true);
-    
-    // Simulate API call delay
-    setTimeout(() => {
-      setTodayClasses([
-        {
-          id: '1',
-          title: 'Yoga cơ bản',
-          time: '10:00 AM - 11:00 AM',
-          location: 'Phòng Yoga 1',
-          participants: 8,
-          maxParticipants: 12,
-        },
-        {
-          id: '2',
-          title: 'Yoga nâng cao',
-          time: '2:00 PM - 3:00 PM',
-          location: 'Phòng Yoga 2',
-          participants: 5,
-          maxParticipants: 8,
-        },
-      ]);
+  const loadData = async () => {
+    try {
+      setIsLoading(true);
+      const token = await AsyncStorage.getItem('access_token');
+      console.log('Token:', token); // Debug log
+
+      if (!token) {
+        Alert.alert('Lỗi', 'Vui lòng đăng nhập lại');
+        navigation.navigate('Login');
+        return;
+      }
+
+      if (!userData?.id) {
+        console.log('No user ID found'); // Debug log
+        return;
+      }
+
+      const api = authApis(token);
       
-      setUpcomingClasses([
-        {
-          id: '3',
-          title: 'Yoga cho người mới',
-          date: '19/10/2023',
-          time: '9:00 AM - 10:00 AM',
-          location: 'Phòng Yoga 1',
-          participants: 3,
-          maxParticipants: 12,
-        },
-        {
-          id: '4',
-          title: 'Yoga giãn cơ',
-          date: '19/10/2023',
-          time: '5:30 PM - 6:30 PM',
-          location: 'Phòng Yoga 2',
-          participants: 6,
-          maxParticipants: 10,
-        },
-        {
-          id: '5',
-          title: 'Yoga trị liệu',
-          date: '20/10/2023',
-          time: '10:00 AM - 11:30 AM',
-          location: 'Phòng Yoga 1',
-          participants: 4,
-          maxParticipants: 8,
-        },
-      ]);
-      
-      setStudents([
-        {
-          id: '1',
-          name: 'Nguyễn Văn A',
-          avatar: 'https://i.pravatar.cc/150?img=1',
-          attendance: 8,
-          totalClasses: 10,
-        },
-        {
-          id: '2',
-          name: 'Trần Thị B',
-          avatar: 'https://i.pravatar.cc/150?img=2',
-          attendance: 10,
-          totalClasses: 10,
-        },
-        {
-          id: '3',
-          name: 'Lê Văn C',
-          avatar: 'https://i.pravatar.cc/150?img=3',
-          attendance: 7,
-          totalClasses: 10,
-        },
-        {
-          id: '4',
-          name: 'Phạm Thị D',
-          avatar: 'https://i.pravatar.cc/150?img=4',
-          attendance: 9,
-          totalClasses: 10,
-        },
-      ]);
-      
-      setStats({
-        totalClasses: 45,
-        totalStudents: 28,
-        completedClasses: 32,
-        upcomingClasses: 13,
+      // Fetch today's classes
+      const todayResponse = await api.get(API_ENDPOINTS.classes, {
+        params: {
+          trainer_id: userData.id,
+          date: new Date().toISOString().split('T')[0],
+          status: 'active'
+        }
       });
-      
+      console.log('Today classes response:', todayResponse.data); // Debug log
+      setTodayClasses(todayResponse.data.results || todayResponse.data);
+
+      // Fetch upcoming classes
+      const upcomingResponse = await api.get(API_ENDPOINTS.classes, {
+        params: {
+          trainer_id: userData.id,
+          date_gt: new Date().toISOString().split('T')[0],
+          status: 'active'
+        }
+      });
+      console.log('Upcoming classes response:', upcomingResponse.data); // Debug log
+      setUpcomingClasses(upcomingResponse.data.results || upcomingResponse.data);
+
+      // Fetch recent students
+      const studentsResponse = await api.get(API_ENDPOINTS.students, {
+        params: {
+          trainer_id: userData.id,
+          limit: 4
+        }
+      });
+      console.log('Students response:', studentsResponse.data); // Debug log
+      setStudents(studentsResponse.data.results || studentsResponse.data);
+
+      // Fetch stats
+      const statsResponse = await api.get(API_ENDPOINTS.trainerStats, {
+        params: {
+          trainer_id: userData.id
+        }
+      });
+      console.log('Stats response:', statsResponse.data); // Debug log
+      setStats(statsResponse.data);
+
+    } catch (error) {
+      console.error('Error loading dashboard data:', error);
+      if (error.response?.status === 401) {
+        Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+        navigation.navigate('Login');
+      } else {
+        Alert.alert('Lỗi', 'Không thể tải dữ liệu. Vui lòng thử lại sau.');
+      }
+    } finally {
+      setIsLoading(false);
       setRefreshing(false);
-    }, 1500);
+    }
   };
 
   const onRefresh = () => {
@@ -131,406 +130,375 @@ const CoachDashboard = ({ navigation }) => {
   };
 
   const handleClassPress = (classItem) => {
-    // Navigate to class details screen
     navigation.navigate('ClassDetails', { classId: classItem.id });
   };
 
   const handleStudentPress = (student) => {
-    // Navigate to student details screen
     navigation.navigate('StudentDetails', { studentId: student.id });
   };
 
-  const renderTodayClassItem = (item) => (
-    <TouchableOpacity 
-      style={styles.classCard} 
-      key={item.id}
-      onPress={() => handleClassPress(item)}
-    >
-      <View style={styles.classTimeContainer}>
-        <Icon name="access-time" size={16} color="#4A90E2" />
-        <Text style={styles.classTime}>{item.time}</Text>
-      </View>
-      
-      <Text style={styles.classTitle}>{item.title}</Text>
-      
-      <View style={styles.classInfoRow}>
-        <Icon name="room" size={14} color="#666" />
-        <Text style={styles.classInfoText}>{item.location}</Text>
-      </View>
-      
-      <View style={styles.classFooter}>
-        <View style={styles.participantsContainer}>
-          <Icon name="people" size={14} color="#666" />
-          <Text style={styles.participantsText}>
-            {item.participants}/{item.maxParticipants}
-          </Text>
-        </View>
-        
-        <TouchableOpacity 
-          style={styles.startButton}
-          onPress={() => navigation.navigate('ClassSession', { classId: item.id })}
-        >
-          <Text style={styles.startButtonText}>Bắt đầu</Text>
-        </TouchableOpacity>
-      </View>
-    </TouchableOpacity>
-  );
+  const handleMyClassesPress = () => {
+    navigation.navigate('CoachClasses');
+  };
 
-  const renderStudentItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.studentCard}
-      onPress={() => handleStudentPress(item)}
-    >
-      <Image source={{ uri: item.avatar }} style={styles.studentAvatar} />
-      <View style={styles.studentInfo}>
-        <Text style={styles.studentName}>{item.name}</Text>
-        <View style={styles.attendanceContainer}>
-          <Text style={styles.attendanceText}>
-            Tham gia: {item.attendance}/{item.totalClasses}
-          </Text>
-          <View style={styles.attendanceBar}>
-            <View 
-              style={[
-                styles.attendanceFill, 
-                { width: `${(item.attendance / item.totalClasses) * 100}%` }
-              ]} 
-            />
-          </View>
-        </View>
-      </View>
-      <Icon name="chevron-right" size={24} color="#ccc" />
-    </TouchableOpacity>
-  );
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('access_token');
+      navigation.navigate('Login');
+    } catch (error) {
+      console.error('Lỗi khi đăng xuất:', error);
+      Alert.alert('Lỗi', 'Không thể đăng xuất. Vui lòng thử lại.');
+    }
+  };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.greeting}>Xin chào, Huấn luyện viên</Text>
-            <Text style={styles.userName}>Nguyễn Thị B</Text>
+  const renderProfileModal = () => (
+    <Modal
+      visible={showProfileModal}
+      transparent={true}
+      animationType="fade"
+      onRequestClose={() => setShowProfileModal(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Thông tin cá nhân</Text>
+            <TouchableOpacity onPress={() => setShowProfileModal(false)}>
+              <Ionicons name="close" size={24} color="#333" />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity 
-            style={styles.profileButton}
-            onPress={() => navigation.navigate('Profile')}
-          >
+          
+          <View style={styles.profileInfo}>
             <Image
-              source={{ uri: 'https://i.pravatar.cc/300?img=5' }}
+              source={{
+                uri: userData?.avatar?.trim()
+                  ? userData.avatar
+                  : 'https://res.cloudinary.com/du0oc4ky5/image/upload/v1741264222/olhl36hwfzoprvgjg2t6.jpg',
+              }}
               style={styles.profileImage}
             />
-          </TouchableOpacity>
-        </View>
-
-        {/* Stats */}
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.totalClasses}</Text>
-            <Text style={styles.statLabel}>Tổng lớp</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.totalStudents}</Text>
-            <Text style={styles.statLabel}>Học viên</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.completedClasses}</Text>
-            <Text style={styles.statLabel}>Đã hoàn thành</Text>
-          </View>
-          
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{stats.upcomingClasses}</Text>
-            <Text style={styles.statLabel}>Sắp diễn ra</Text>
-          </View>
-        </View>
-
-        {/* Quick actions */}
-        <View style={styles.quickActions}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('ScheduleClass')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#E8F3FF' }]}>
-              <Icon name="event" size={24} color="#4A90E2" />
+            
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Tên đăng nhập:</Text>
+              <Text style={styles.infoValue}>{userData?.username || 'Chưa cập nhật'}</Text>
             </View>
-            <Text style={styles.actionText}>Lên lịch</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('MyClasses')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#FFF5E7' }]}>
-              <Icon name="fitness-center" size={24} color="#FF9800" />
+            
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Email:</Text>
+              <Text style={styles.infoValue}>{userData?.email || 'Chưa cập nhật'}</Text>
             </View>
-            <Text style={styles.actionText}>Lớp học</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('Students')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#F5FFE8' }]}>
-              <Icon name="people" size={24} color="#8BC34A" />
+            
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Số điện thoại:</Text>
+              <Text style={styles.infoValue}>{userData?.phone || 'Chưa cập nhật'}</Text>
             </View>
-            <Text style={styles.actionText}>Học viên</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => navigation.navigate('Notifications')}
-          >
-            <View style={[styles.actionIcon, { backgroundColor: '#FFE8E8' }]}>
-              <Icon name="notifications" size={24} color="#FF5252" />
-            </View>
-            <Text style={styles.actionText}>Thông báo</Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* Today's classes */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Lớp học hôm nay</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('MyClasses')}>
-              <Text style={styles.seeAllButton}>Xem tất cả</Text>
-            </TouchableOpacity>
-          </View>
-
-          {todayClasses.length > 0 ? (
-            todayClasses.map((item) => renderTodayClassItem(item))
-          ) : (
-            <View style={styles.emptyState}>
-              <Icon name="event-busy" size={50} color="#ccc" />
-              <Text style={styles.emptyStateText}>
-                Bạn không có lớp học nào vào hôm nay
+            
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Vai trò:</Text>
+              <Text style={styles.infoValue}>
+                {userData?.role === 'trainer' ? 'Huấn luyện viên' : 'Chưa cập nhật'}
               </Text>
             </View>
-          )}
-        </View>
-
-        {/* Upcoming classes */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Lớp học sắp tới</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('MyClasses')}>
-              <Text style={styles.seeAllButton}>Xem lịch</Text>
-            </TouchableOpacity>
           </View>
 
-          {upcomingClasses.map((item) => (
-            <TouchableOpacity 
-              style={styles.upcomingClassItem} 
-              key={item.id}
-              onPress={() => handleClassPress(item)}
-            >
-              <View style={styles.upcomingClassDate}>
-                <Text style={styles.upcomingClassDateText}>{item.date}</Text>
+          <TouchableOpacity 
+            style={styles.editButton}
+            onPress={() => {
+              setShowProfileModal(false);
+              navigation.navigate('Profile', { userData });
+            }}
+          >
+            <Text style={styles.editButtonText}>Chỉnh sửa thông tin</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
+
+  if (isLoading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <Text>Đang tải...</Text>
+      </View>
+    );
+  }
+
+  return (
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.greetingContainer}>
+          <Text style={styles.greeting}>Xin chào,</Text>
+          <Text style={styles.userName}>{getDisplayName()}</Text>
+        </View>
+        <View style={styles.notificationContainer}>
+          <Ionicons name="notifications-outline" size={24} color="black" />
+          <TouchableOpacity onPress={handleAvatarPress}>
+            <Image
+              source={{
+                uri: userData?.avatar?.trim()
+                  ? userData.avatar
+                  : 'https://res.cloudinary.com/du0oc4ky5/image/upload/v1741264222/olhl36hwfzoprvgjg2t6.jpg',
+              }}
+              style={styles.avatar}
+            />
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {renderProfileModal()}
+
+      {/* Navigation Buttons */}
+      <View style={styles.nav}>
+        <TouchableOpacity style={styles.navItem} onPress={handleMyClassesPress}>
+          <View style={[styles.iconContainer, { backgroundColor: '#e3f2fd' }]}>
+            <Ionicons name="calendar-outline" size={24} color="#2196f3" />
+          </View>
+          <Text style={styles.navText}>Lớp học của tôi</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Students')}>
+          <View style={[styles.iconContainer, { backgroundColor: '#f3e5f5' }]}>
+            <Ionicons name="people-outline" size={24} color="#9c27b0" />
+          </View>
+          <Text style={styles.navText}>Học viên</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Schedule')}>
+          <View style={[styles.iconContainer, { backgroundColor: '#fff3e0' }]}>
+            <Ionicons name="time-outline" size={24} color="#ff9800" />
+          </View>
+          <Text style={styles.navText}>Lịch dạy</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={handleLogout}>
+          <View style={[styles.iconContainer, { backgroundColor: '#ffebee' }]}>
+            <Ionicons name="log-out-outline" size={24} color="#f44336" />
+          </View>
+          <Text style={styles.navText}>Đăng xuất</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Today's Classes Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Lớp học hôm nay</Text>
+        <TouchableOpacity onPress={handleMyClassesPress}>
+          <Text style={styles.viewAll}>Xem tất cả</Text>
+        </TouchableOpacity>
+      </View>
+      {todayClasses.length > 0 ? (
+        todayClasses.map((item) => (
+          <TouchableOpacity 
+            key={item.id}
+            style={styles.classCard}
+            onPress={() => handleClassPress(item)}
+          >
+            <View style={styles.classInfo}>
+              <Text style={styles.className}>{item.name}</Text>
+              <Text style={styles.classTime}>
+                {new Date(item.start_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - 
+                {new Date(item.end_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+              <View style={styles.participantsContainer}>
+                <Ionicons name="people-outline" size={16} color="#666" />
+                <Text style={styles.participantsText}>
+                  {item.current_participants || 0}/{item.max_participants || 20}
+                </Text>
               </View>
-              
-              <View style={styles.upcomingClassInfo}>
-                <Text style={styles.upcomingClassTitle}>{item.title}</Text>
-                
-                <View style={styles.upcomingClassDetails}>
-                  <View style={styles.upcomingClassDetailItem}>
-                    <Icon name="access-time" size={14} color="#666" />
-                    <Text style={styles.upcomingClassDetailText}>{item.time}</Text>
-                  </View>
-                  
-                  <View style={styles.upcomingClassDetailItem}>
-                    <Icon name="room" size={14} color="#666" />
-                    <Text style={styles.upcomingClassDetailText}>{item.location}</Text>
-                  </View>
-                  
-                  <View style={styles.upcomingClassDetailItem}>
-                    <Icon name="people" size={14} color="#666" />
-                    <Text style={styles.upcomingClassDetailText}>
-                      {item.participants}/{item.maxParticipants} học viên
-                    </Text>
-                  </View>
+            </View>
+            <TouchableOpacity 
+              style={styles.startButton}
+              onPress={() => navigation.navigate('ClassSession', { classId: item.id })}
+            >
+              <Text style={styles.startButtonText}>Bắt đầu</Text>
+            </TouchableOpacity>
+          </TouchableOpacity>
+        ))
+      ) : (
+        <View style={styles.emptySection}>
+          <Ionicons name="calendar-outline" size={50} color="#ccc" />
+          <Text style={styles.emptyText}>Bạn không có lớp học nào vào hôm nay</Text>
+        </View>
+      )}
+
+      {/* Upcoming Classes Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Lớp học sắp tới</Text>
+        <TouchableOpacity onPress={handleMyClassesPress}>
+          <Text style={styles.viewAll}>Xem tất cả</Text>
+        </TouchableOpacity>
+      </View>
+      {upcomingClasses.length > 0 ? (
+        upcomingClasses.map((item) => (
+          <TouchableOpacity 
+            key={item.id}
+            style={styles.classCard}
+            onPress={() => handleClassPress(item)}
+          >
+            <View style={styles.classInfo}>
+              <Text style={styles.className}>{item.name}</Text>
+              <Text style={styles.classTime}>
+                {new Date(item.start_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - 
+                {new Date(item.end_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+              </Text>
+              <View style={styles.participantsContainer}>
+                <Ionicons name="people-outline" size={16} color="#666" />
+                <Text style={styles.participantsText}>
+                  {item.current_participants || 0}/{item.max_participants || 20}
+                </Text>
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))
+      ) : (
+        <View style={styles.emptySection}>
+          <Ionicons name="calendar-outline" size={50} color="#ccc" />
+          <Text style={styles.emptyText}>Bạn không có lớp học nào sắp tới</Text>
+        </View>
+      )}
+
+      {/* Recent Students Section */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>Học viên gần đây</Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Students')}>
+          <Text style={styles.viewAll}>Xem tất cả</Text>
+        </TouchableOpacity>
+      </View>
+      {students.length > 0 ? (
+        students.map((item) => (
+          <TouchableOpacity 
+            key={item.id}
+            style={styles.studentCard}
+            onPress={() => handleStudentPress(item)}
+          >
+            <Image 
+              source={{ uri: item.avatar || 'https://i.pravatar.cc/150?img=' + item.id }} 
+              style={styles.studentAvatar} 
+            />
+            <View style={styles.studentInfo}>
+              <Text style={styles.studentName}>{item.full_name}</Text>
+              <View style={styles.attendanceContainer}>
+                <Text style={styles.attendanceText}>
+                  Tham gia: {item.attendance_count || 0}/{item.total_classes || 0}
+                </Text>
+                <View style={styles.attendanceBar}>
+                  <View 
+                    style={[
+                      styles.attendanceFill, 
+                      { width: `${((item.attendance_count || 0) / (item.total_classes || 1)) * 100}%` }
+                    ]} 
+                  />
                 </View>
               </View>
-              
-              <Icon name="chevron-right" size={24} color="#ccc" />
-            </TouchableOpacity>
-          ))}
+            </View>
+            <Ionicons name="chevron-forward" size={24} color="#ccc" />
+          </TouchableOpacity>
+        ))
+      ) : (
+        <View style={styles.emptySection}>
+          <Ionicons name="people-outline" size={50} color="#ccc" />
+          <Text style={styles.emptyText}>Bạn chưa có học viên nào</Text>
         </View>
-
-        {/* Students */}
-        <View style={styles.sectionContainer}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Học viên của bạn</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Students')}>
-              <Text style={styles.seeAllButton}>Xem tất cả</Text>
-            </TouchableOpacity>
-          </View>
-
-          <FlatList
-            data={students}
-            renderItem={renderStudentItem}
-            keyExtractor={(item) => item.id}
-            scrollEnabled={false}
-          />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      )}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#f5f5f5',
+    padding: 20,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    marginBottom: 20,
   },
-  greeting: {
-    fontSize: 14,
-    color: '#666',
+  greetingContainer: {
+    flexDirection: 'column',
   },
-  userName: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
+  notificationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
-  profileButton: {
+  avatar: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    overflow: 'hidden',
+    marginLeft: 10,
   },
-  profileImage: {
-    width: '100%',
-    height: '100%',
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    paddingHorizontal: 8,
-    marginBottom: 16,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 12,
-    margin: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  statNumber: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4A90E2',
-    marginBottom: 4,
-  },
-  statLabel: {
-    fontSize: 12,
+  greeting: {
+    fontSize: 16,
     color: '#666',
-    textAlign: 'center',
   },
-  quickActions: {
+  userName: {
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  nav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    marginBottom: 24,
+    marginBottom: 20,
   },
-  actionButton: {
+  navItem: {
     alignItems: 'center',
   },
-  actionIcon: {
+  iconContainer: {
     width: 50,
     height: 50,
-    borderRadius: 12,
+    borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 5,
   },
-  actionText: {
+  navText: {
     fontSize: 12,
-    color: '#333',
-    fontWeight: '500',
+    textAlign: 'center',
   },
-  sectionContainer: {
-    marginBottom: 24,
-    paddingHorizontal: 16,
-  },
-  sectionHeader: {
+  section: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 10,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
   },
-  seeAllButton: {
+  viewAll: {
+    color: '#2196f3',
     fontSize: 14,
-    color: '#4A90E2',
-    fontWeight: '500',
   },
   classCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  classTimeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  classTime: {
-    fontSize: 14,
-    color: '#4A90E2',
-    fontWeight: '500',
-    marginLeft: 6,
-  },
-  classTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#333',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
     marginBottom: 10,
-  },
-  classInfoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 6,
-  },
-  classInfoText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 6,
-  },
-  classFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: '#f2f2f2',
+  },
+  classInfo: {
+    flex: 1,
+  },
+  className: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 5,
+  },
+  classTime: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 5,
   },
   participantsContainer: {
     flexDirection: 'row',
@@ -539,90 +507,26 @@ const styles = StyleSheet.create({
   participantsText: {
     fontSize: 14,
     color: '#666',
-    marginLeft: 6,
+    marginLeft: 5,
   },
   startButton: {
-    backgroundColor: '#4A90E2',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
+    backgroundColor: '#2196f3',
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
   },
   startButtonText: {
-    fontSize: 12,
-    color: 'white',
-    fontWeight: '600',
-  },
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 24,
-    marginVertical: 8,
-  },
-  emptyStateText: {
-    fontSize: 14,
-    color: '#666',
-    marginVertical: 12,
-    textAlign: 'center',
-  },
-  upcomingClassItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  upcomingClassDate: {
-    width: 60,
-    alignItems: 'center',
-  },
-  upcomingClassDateText: {
+    color: '#fff',
     fontSize: 14,
     fontWeight: '500',
-    color: '#4A90E2',
-  },
-  upcomingClassInfo: {
-    flex: 1,
-    paddingHorizontal: 12,
-  },
-  upcomingClassTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
-  },
-  upcomingClassDetails: {
-    flexDirection: 'column',
-  },
-  upcomingClassDetailItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 3,
-  },
-  upcomingClassDetailText: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 4,
   },
   studentCard: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
   },
   studentAvatar: {
     width: 40,
@@ -631,31 +535,111 @@ const styles = StyleSheet.create({
   },
   studentInfo: {
     flex: 1,
-    paddingHorizontal: 12,
+    marginLeft: 15,
   },
   studentName: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 4,
+    fontSize: 16,
+    fontWeight: '500',
+    marginBottom: 5,
   },
   attendanceContainer: {
-    marginTop: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   attendanceText: {
     fontSize: 12,
     color: '#666',
-    marginBottom: 4,
+    marginRight: 10,
   },
   attendanceBar: {
+    flex: 1,
     height: 4,
-    backgroundColor: '#eee',
+    backgroundColor: '#f0f0f0',
     borderRadius: 2,
-    overflow: 'hidden',
   },
   attendanceFill: {
     height: '100%',
     backgroundColor: '#4CAF50',
+    borderRadius: 2,
+  },
+  emptySection: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  emptyText: {
+    color: '#666',
+    marginTop: 10,
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    borderRadius: 20,
+    padding: 20,
+    width: '90%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  profileInfo: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  profileImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 20,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  infoLabel: {
+    fontSize: 16,
+    color: '#666',
+    fontWeight: '500',
+  },
+  infoValue: {
+    fontSize: 16,
+    color: '#333',
+    flex: 1,
+    textAlign: 'right',
+    marginLeft: 10,
+  },
+  editButton: {
+    backgroundColor: '#2196f3',
+    padding: 15,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  editButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

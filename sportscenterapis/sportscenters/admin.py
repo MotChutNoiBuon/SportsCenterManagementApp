@@ -176,10 +176,10 @@ class ReceptionistAdmin(BaseUserAdmin):
     avatar_view.short_description = 'Avatar'
 
 class ClassAdmin(admin.ModelAdmin):
-    list_display = ('name', 'trainer', 'schedule', 'status', 'price')
+    list_display = ('name', 'trainer', 'start_time','end_time', 'status', 'price')
     list_filter = ('status', 'trainer')
     search_fields = ('name', 'trainer__full_name')
-    ordering = ['-schedule']
+    ordering = ['-start_time']
 
 
 class EnrollmentAdmin(admin.ModelAdmin):

@@ -1,9 +1,9 @@
 import { Platform } from 'react-native';
 import axios from "axios"
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
 export const DEV_MODE = false;
 
-let BASE_URL = 'http://192.168.20.232:8000/'
+let BASE_URL = 'http://192.168.3.14:8000/'
 
 
 export const OAUTH2_CONFIG = {
@@ -23,6 +23,9 @@ export const API_ENDPOINTS = {
   'appointments': '/appointments/',
   'payments': '/payments/',
   'notifications': '/notifications/',
+  'trainers': '/trainers/',
+  'members': '/members/',
+  'receptionists': '/receptionists/',
 };
 export const authApis = (token) => {
     return axios.create({
@@ -38,9 +41,10 @@ export default axios.create({
 });
 const getCurrentUser = async () => {
   try {
+    const token = await AsyncStorage.getItem('access_token');
     const response = await axios.get(API_ENDPOINTS['current-user'], {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+        Authorization: `Bearer ${token}`,
       },
     });
     return response.data; // Dữ liệu người dùng hiện tại
@@ -49,12 +53,3 @@ const getCurrentUser = async () => {
     throw error;
   }
 };
-
-// Sử dụng
-getCurrentUser()
-  .then((userData) => {
-    console.log('Người dùng hiện tại:', userData);
-  })
-  .catch((error) => {
-    console.error('Lỗi:', error);
-  });

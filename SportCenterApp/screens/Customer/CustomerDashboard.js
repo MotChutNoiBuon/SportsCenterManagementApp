@@ -58,11 +58,17 @@ const CustomerDashboard = () => {
 
       {/* Navigation Buttons */}
       <View style={styles.nav}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Classes')}>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('RegisterClass')}>
           <View style={[styles.iconContainer, { backgroundColor: '#e3f2fd' }]}>
             <Ionicons name="calendar-outline" size={24} color="#2196f3" />
           </View>
           <Text style={styles.navText}>Lớp học</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('CoachList')}>
+          <View style={[styles.iconContainer, { backgroundColor: '#f3e5f5' }]}>
+            <Ionicons name="fitness-outline" size={24} color="#9c27b0" />
+          </View>
+          <Text style={styles.navText}>Huấn luyện viên</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Schedule')}>
           <View style={[styles.iconContainer, { backgroundColor: '#fff3e0' }]}>
@@ -94,7 +100,7 @@ const CustomerDashboard = () => {
       <View style={styles.emptySection}>
         <Ionicons name="calendar-outline" size={50} color="#ccc" />
         <Text style={styles.emptyText}>Bạn chưa đăng ký lớp học nào</Text>
-        <TouchableOpacity style={styles.findClassButton} onPress={() => navigation.navigate('Classes')}>
+        <TouchableOpacity style={styles.findClassButton} onPress={() => navigation.navigate('RegisterClass')}>
           <Text style={styles.findClassText}>Tìm lớp học</Text>
         </TouchableOpacity>
       </View>

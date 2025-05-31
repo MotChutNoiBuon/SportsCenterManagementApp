@@ -26,9 +26,11 @@ class ClassViewSet(viewsets.ModelViewSet):
     pagination_class = paginators.StandardResultsSetPagination
 
     def get_queryset(self):
-        if self.request.user.is_staff:
-            return Class.objects.all()
-        return Class.objects.filter(status='active', deleted_at__isnull=True)
+        queryset = Class.objects.all()
+        trainer_id = self.request.query_params.get('trainer')
+        if trainer_id:
+            queryset = queryset.filter(trainer_id=trainer_id)
+        return queryset
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()

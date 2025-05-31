@@ -10,7 +10,7 @@ from .models import Class, Trainer, User, Progress,Receptionist,Payment,Member,N
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone','role']
         read_only_fields = ['id', 'username', 'email']
 
     def update(self, instance, validated_data):
@@ -36,7 +36,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['first_name', 'last_name', 'username', 'password', 'avatar','phone','email']
+        fields = ['id','first_name', 'last_name', 'username', 'password', 'avatar','phone','email','role']
         extra_kwargs = {
             'password': {
                 'write_only': True
