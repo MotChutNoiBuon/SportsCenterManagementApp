@@ -3,17 +3,10 @@ import { apiClient } from './apiClient';
 import { API_ENDPOINTS } from './apiConfig';
 
 // Lấy danh sách lớp học
-<<<<<<< Updated upstream
 export const getClasses = async () => {
   try {
     console.log('Gọi API lấy danh sách lớp học:', `${API_ENDPOINTS.classes}`);
     const response = await apiClient.get(API_ENDPOINTS.classes);
-=======
-export const getClasses = async (page = 1) => {
-  try {
-    console.log('Đang lấy trang lớp học:', page);
-    const response = await apiConfig.get(`${API_ENDPOINTS.classes}?page=${page}`);
->>>>>>> Stashed changes
     console.log('Kết quả API lớp học:', response.data);
     return response.data;
   } catch (error) {
@@ -51,64 +44,8 @@ export const enrollClass = async (classId) => {
 // Lấy danh sách lớp học đã đăng ký
 export const getEnrollments = async () => {
   try {
-<<<<<<< Updated upstream
     const response = await apiClient.get(API_ENDPOINTS.enrollments);
     return response.data;
-=======
-    console.log('Gọi API lấy danh sách đăng ký:', `${API_ENDPOINTS.enrollments}`);
-    const token = await AsyncStorage.getItem('access_token');
-    if (!token) {
-      throw new Error('Không tìm thấy token xác thực');
-    }
-
-    const response = await axios({
-      method: 'get',
-      url: `${apiConfig.defaults.baseURL}${API_ENDPOINTS.enrollments}`,
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      }
-    });
-
-    console.log('Kết quả API danh sách đăng ký:', response.data);
-
-    // Lấy thông tin chi tiết cho từng lớp học
-    const enrollments = response.data.results || response.data || [];
-    console.log('Số lượng đăng ký:', enrollments.length);
-
-    const enrollmentsWithDetails = await Promise.all(
-      enrollments.map(async (enrollment) => {
-        try {
-          if (!enrollment.gym_class) {
-            console.warn('Không tìm thấy thông tin lớp học cho đăng ký:', enrollment.id);
-            return enrollment;
-          }
-
-          const classDetails = await getClassDetails(enrollment.gym_class);
-          return {
-            ...enrollment,
-            gym_class: classDetails
-          };
-        } catch (error) {
-          console.error('Lỗi khi lấy thông tin lớp học:', error);
-          console.error('Chi tiết lỗi:', {
-            enrollmentId: enrollment.id,
-            classId: enrollment.gym_class,
-            error: error.message
-          });
-          return enrollment;
-        }
-      })
-    );
-
-    console.log('Số lượng đăng ký sau khi lấy chi tiết:', enrollmentsWithDetails.length);
-
-    return {
-      ...response.data,
-      results: enrollmentsWithDetails
-    };
->>>>>>> Stashed changes
   } catch (error) {
     console.error('Lấy danh sách đăng ký thất bại:', error.message);
     console.error('Chi tiết lỗi:', {
