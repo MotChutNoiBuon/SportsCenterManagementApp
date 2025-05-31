@@ -4,18 +4,10 @@ import {
   Text, 
   StyleSheet, 
   ScrollView, 
-<<<<<<< Updated upstream
   Image, 
   TouchableOpacity, 
   Alert, 
   ActivityIndicator 
-=======
-  ActivityIndicator,
-  Alert,
-  TouchableOpacity,
-  Image,
-  RefreshControl
->>>>>>> Stashed changes
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,12 +18,7 @@ const ClassDetails = ({ route, navigation }) => {
   const { classId } = route.params;
   const [classData, setClassData] = useState(null);
   const [loading, setLoading] = useState(true);
-<<<<<<< Updated upstream
   const [bookingLoading, setBookingLoading] = useState(false);
-=======
-  const [enrolling, setEnrolling] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
->>>>>>> Stashed changes
 
   useEffect(() => {
     loadClassData();
@@ -51,7 +38,6 @@ const ClassDetails = ({ route, navigation }) => {
     }
   };
 
-<<<<<<< Updated upstream
   const handleBookClass = () => {
     setBookingLoading(true);
     
@@ -66,38 +52,6 @@ const ClassDetails = ({ route, navigation }) => {
         className: classData.title,
       });
     }, 1500);
-=======
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadClassData();
-  };
-
-  const handleEnroll = async () => {
-    if (!classData || enrolling) return;
-    setEnrolling(true);
-    try {
-      const token = await AsyncStorage.getItem('access_token');
-      if (!token) {
-        Alert.alert('Lỗi', 'Vui lòng đăng nhập để đăng ký lớp học');
-        return;
-      }
-
-      const result = await enrollClass(classData.id);
-      console.log('Kết quả đăng ký:', result);
-
-      if (result.status === 'already_enrolled') {
-        Alert.alert('Thông báo', result.message);
-      } else if (result.status === 'success') {
-        Alert.alert('Thành công', 'Đăng ký lớp học thành công!');
-        loadClassData(); // Reload thông tin lớp học
-      }
-    } catch (error) {
-      console.error('Lỗi khi đăng ký:', error);
-      Alert.alert('Lỗi', error.message || 'Đăng ký thất bại. Vui lòng thử lại.');
-    } finally {
-      setEnrolling(false);
-    }
->>>>>>> Stashed changes
   };
 
   if (loading && !refreshing) {
@@ -117,7 +71,6 @@ const ClassDetails = ({ route, navigation }) => {
     );
   }
 
-<<<<<<< Updated upstream
   const renderStars = (rating) => {
     return (
       <View style={styles.starsContainer}>
@@ -132,30 +85,10 @@ const ClassDetails = ({ route, navigation }) => {
         ))}
       </View>
     );
-=======
-  // Lấy tên huấn luyện viên
-  let trainerName = '';
-  if (classData.trainer) {
-    trainerName = classData.trainer.full_name || classData.trainer.username || '';
-  }
-
-  // Định dạng ngày giờ
-  const formatDateTime = (dateStr) => {
-    if (!dateStr) return '';
-    const date = new Date(dateStr);
-    return date.toLocaleString('vi-VN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
->>>>>>> Stashed changes
   };
 
   return (
     <SafeAreaView style={styles.container}>
-<<<<<<< Updated upstream
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Header Image */}
         <View style={styles.headerContainer}>
@@ -219,69 +152,6 @@ const ClassDetails = ({ route, navigation }) => {
           </View>
 
           {/* Class Description */}
-=======
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <View style={styles.header}>
-          <Text style={styles.title}>{classData.name}</Text>
-          <View style={styles.statusContainer}>
-            <Ionicons 
-              name="ellipse" 
-              size={8} 
-              color={classData.status === 'active' ? '#4CAF50' : '#FFA000'} 
-            />
-            <Text style={styles.statusText}>
-              {classData.status === 'active' ? 'Đang hoạt động' : 'Sắp diễn ra'}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.contentContainer}>
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Thông tin cơ bản</Text>
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <Ionicons name="person-outline" size={20} color="#007AFF" />
-                <Text style={styles.infoText}>Huấn luyện viên: {trainerName}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Ionicons name="time-outline" size={20} color="#007AFF" />
-                <Text style={styles.infoText}>Bắt đầu: {formatDateTime(classData.start_time)}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Ionicons name="time-outline" size={20} color="#007AFF" />
-                <Text style={styles.infoText}>Kết thúc: {formatDateTime(classData.end_time)}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Ionicons name="location-outline" size={20} color="#007AFF" />
-                <Text style={styles.infoText}>Địa điểm: {classData.location || 'Phòng tập chính'}</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Thông tin lớp học</Text>
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <Ionicons name="people-outline" size={20} color="#007AFF" />
-                <Text style={styles.infoText}>
-                  Số học viên: {classData.current_participants || 0}/{classData.max_participants || 20}
-                </Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Ionicons name="cash-outline" size={20} color="#007AFF" />
-                <Text style={styles.infoText}>
-                  Giá: {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(classData.price)}
-                </Text>
-              </View>
-            </View>
-          </View>
-
->>>>>>> Stashed changes
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Mô tả</Text>
             <View style={styles.descriptionCard}>
@@ -352,10 +222,7 @@ const ClassDetails = ({ route, navigation }) => {
         </View>
       </ScrollView>
 
-<<<<<<< Updated upstream
       {/* Booking Button */}
-=======
->>>>>>> Stashed changes
       <View style={styles.bottomContainer}>
         <View style={styles.spotsInfo}>
           <Icon name="event-available" size={20} color="#4A90E2" />
@@ -401,7 +268,6 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#666',
   },
-<<<<<<< Updated upstream
   headerContainer: {
     position: 'relative',
     height: 250,
@@ -427,43 +293,10 @@ const styles = StyleSheet.create({
     color: 'white',
     fontWeight: 'bold',
     fontSize: 12,
-=======
-  header: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#F5F5F5',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    alignSelf: 'flex-start',
-  },
-  statusText: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 4,
->>>>>>> Stashed changes
   },
   contentContainer: {
     padding: 16,
   },
-<<<<<<< Updated upstream
   titleContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -504,8 +337,6 @@ const styles = StyleSheet.create({
     color: '#666',
     marginLeft: 10,
   },
-=======
->>>>>>> Stashed changes
   section: {
     marginBottom: 24,
   },
@@ -514,40 +345,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#333',
     marginBottom: 12,
-<<<<<<< Updated upstream
-=======
-  },
-  infoCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  infoText: {
-    fontSize: 15,
-    color: '#444',
-    marginLeft: 12,
-    flex: 1,
-  },
-  descriptionCard: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
->>>>>>> Stashed changes
   },
   description: {
     fontSize: 14,

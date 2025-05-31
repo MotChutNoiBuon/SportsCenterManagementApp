@@ -86,10 +86,6 @@ const StackNavigator = () => {
           component={ClassDetails}
           options={{ title: 'Chi tiết lớp học' }}
         />
-
-<<<<<<< Updated upstream
-      </Stack.Navigator>
-=======
       <Stack.Screen
         name="Notifications"
         component={NotificationScreen}
@@ -126,7 +122,6 @@ const StackNavigator = () => {
         options={{ title: 'Danh sách học viên' }}
       />
     </Stack.Navigator>
->>>>>>> Stashed changes
   );
 }
 
