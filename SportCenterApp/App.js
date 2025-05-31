@@ -4,10 +4,10 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import WelcomeScreen from './screens/Auth/WelcomeScreen';
 import LoginScreen from './screens/Auth/LoginScreen';
 import RegisterScreen from './screens/Auth/RegisterScreen';
+import RegisterClass from './screens/Shared/RegisterClass';
+import EnrolledClasses from './screens/Shared/EnrolledClasses';
 
 import CustomerDashboard from './screens/Customer/CustomerDashboard';
-import CoachList from './screens/Customer/CoachList';
-import CoachDetail from './screens/Customer/CoachDetail';
 
 import CoachDashboard from './screens/Coach/CoachDashboard';
 
@@ -16,12 +16,12 @@ import AdminDashboard from './screens/Admin/AdminDashboard';
 import NotificationScreen from './screens/Shared/NotificationScreen';
 import ProfileScreen from './screens/Shared/ProfileScreen';
 import ClassDetails from './screens/Shared/ClassDetails';
-import RegisterClass from './screens/Shared/RegisterClass';
-import EnrolledClasses from './screens/Shared/EnrolledClasses';
 import { MyDispatchContext, MyUserContext, UserProvider } from "./contexts/UserContext";
 import MyUserReducer from "./reducers/MyUserReducer";
 
 import { useContext, useReducer } from "react";
+import MyClasses from './screens/Coach/MyClasses';
+import ClassStudents from './screens/Coach/ClassStudents';
 
 const Stack = createNativeStackNavigator();
 
@@ -45,47 +45,29 @@ const StackNavigator = () => {
         component={RegisterScreen}
         options={{ title: 'Đăng ký' }}
       />
-
       <Stack.Screen
         name="CustomerDashboard"
         component={CustomerDashboard}
-        options={{ title: 'Home' }}
+        options={{ 
+          headerShown: false,
+          gestureEnabled: false
+        }}
       />
- <Stack.Screen
-        name="CoachDashboard"
-        component={CoachDashboard}
-        options={{ title: 'Huấn luyện viên' }}
-      />
-      <Stack.Screen
-        name="CoachList"
-        component={CoachList}
-        options={{ title: 'Danh sách huấn luyện viên' }}
-      />
-
-      <Stack.Screen
-        name="CoachDetail"
-        component={CoachDetail}
-        options={{ title: 'Thông tin huấn luyện viên' }}
-      />
-
       <Stack.Screen
         name="TrainerDashboard"
         component={CoachDashboard}
         options={{ headerShown: false }}
       />
-
       <Stack.Screen
         name="AdminDashboard"
         component={AdminDashboard}
         options={{ headerShown: false }}
       />
-
       <Stack.Screen
         name="ReceptionistDashboard"
         component={AdminDashboard}
         options={{ headerShown: false }}
       />
-
       <Stack.Screen
         name="Notifications"
         component={NotificationScreen}
@@ -102,6 +84,11 @@ const StackNavigator = () => {
         options={{ title: 'Chi tiết lớp học' }}
       />
       <Stack.Screen
+        name="MyClasses"
+        component={MyClasses}
+        options={{ title: 'Danh sách lớp học' }}
+      />
+      <Stack.Screen
         name="RegisterClass"
         component={RegisterClass}
         options={{ title: 'Danh sách lớp học' }}
@@ -110,6 +97,11 @@ const StackNavigator = () => {
         name="EnrolledClasses"
         component={EnrolledClasses}
         options={{ title: 'Lớp học đã đăng ký' }}
+      />
+      <Stack.Screen
+        name="ClassStudents"
+        component={ClassStudents}
+        options={{ title: 'Danh sách học viên' }}
       />
     </Stack.Navigator>
   );
@@ -122,7 +114,7 @@ const App = () => {
     <MyUserContext.Provider value={user}>
       <MyDispatchContext.Provider value={dispatch}>
         <NavigationContainer>
-          <StackNavigator />
+          <StackNavigator/>
         </NavigationContainer>
       </MyDispatchContext.Provider>
     </MyUserContext.Provider>

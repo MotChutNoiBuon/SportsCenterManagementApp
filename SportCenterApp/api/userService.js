@@ -1,4 +1,4 @@
-import { API_BASE_URL, API_ENDPOINTS } from './apiConfig';
+import { BASE_URL, API_ENDPOINTS } from './apiConfig';
 import { apiClient } from './apiClient';
 
 export const getUserProfile = async () => {
@@ -13,7 +13,7 @@ export const getUserProfile = async () => {
 
 export const updateUserProfile = async (userData) => {
   try {
-    const response = await apiClient.put(API_ENDPOINTS.profile, userData);
+    const response = await apiClient.put(`${API_ENDPOINTS.profile}`, userData);
     return response.data;
   } catch (error) {
     console.error('Lỗi khi cập nhật thông tin người dùng:', error);
