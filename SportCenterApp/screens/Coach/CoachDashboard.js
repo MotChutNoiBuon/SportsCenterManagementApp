@@ -34,7 +34,7 @@ const CoachDashboard = () => {
 
   const navigation = useNavigation();
   const currentUser = useContext(MyUserContext);
-  const userData = currentUser._j;
+  const userData = currentUser.payload;
 
   const getDisplayName = () => {
     if (userData?.first_name && userData?.last_name) {
@@ -63,11 +63,6 @@ const CoachDashboard = () => {
         return;
       }
 
-      if (!userData?.id) {
-        console.log('No user ID found'); // Debug log
-        return;
-      }
-
       const api = authApis(token);
       
       // Fetch today's classes
@@ -86,7 +81,8 @@ const CoachDashboard = () => {
         params: {
           trainer_id: userData.id,
           date_gt: new Date().toISOString().split('T')[0],
-          status: 'active'
+          status: 'active',
+          ordering: 'start_time'
         }
       });
       console.log('Upcoming classes response:', upcomingResponse.data); // Debug log
@@ -130,7 +126,7 @@ const CoachDashboard = () => {
   };
 
   const handleClassPress = (classItem) => {
-    navigation.navigate('ClassDetails', { classId: classItem.id });
+    navigation.navigate('CoachClassDetail', { classId: classItem.id });
   };
 
   const handleStudentPress = (student) => {
@@ -149,6 +145,10 @@ const CoachDashboard = () => {
       console.error('Lỗi khi đăng xuất:', error);
       Alert.alert('Lỗi', 'Không thể đăng xuất. Vui lòng thử lại.');
     }
+  };
+
+  const handleViewStudents = () => {
+    navigation.navigate('Students', { trainerId: currentUser.id });
   };
 
   const renderProfileModal = () => (
@@ -260,7 +260,7 @@ const CoachDashboard = () => {
           </View>
           <Text style={styles.navText}>Lớp học của tôi</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Students')}>
+        <TouchableOpacity style={styles.navItem} onPress={handleViewStudents}>
           <View style={[styles.iconContainer, { backgroundColor: '#f3e5f5' }]}>
             <Ionicons name="people-outline" size={24} color="#9c27b0" />
           </View>
@@ -303,7 +303,7 @@ const CoachDashboard = () => {
               <View style={styles.participantsContainer}>
                 <Ionicons name="people-outline" size={16} color="#666" />
                 <Text style={styles.participantsText}>
-                  {item.current_participants || 0}/{item.max_participants || 20}
+                  {item.current_capacity || 0}/{item.max_members || 20}
                 </Text>
               </View>
             </View>

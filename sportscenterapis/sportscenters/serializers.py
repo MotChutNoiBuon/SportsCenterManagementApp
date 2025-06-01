@@ -76,9 +76,10 @@ class ReceptionistSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class EnrollmentSerializer(serializers.ModelSerializer):
+    member_detail = UserSerializer(source='member', read_only=True)
     class Meta:
         model = Enrollment
-        fields = '__all__'
+        fields = ['id', 'status', 'member', 'member_detail', 'gym_class']
 
 class ProgressSerializer(serializers.ModelSerializer):
     class Meta:

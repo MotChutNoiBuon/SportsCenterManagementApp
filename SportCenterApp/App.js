@@ -1,6 +1,6 @@
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
+import { MyUserProvider } from './contexts/UserContext';
 import WelcomeScreen from './screens/Auth/WelcomeScreen';
 import LoginScreen from './screens/Auth/LoginScreen';
 import RegisterScreen from './screens/Auth/RegisterScreen';
@@ -11,6 +11,9 @@ import CoachDetail from './screens/Customer/CoachDetail';
 
 import CoachDashboard from './screens/Coach/CoachDashboard';
 import CoachClasses from './screens/Coach/CoachClasses';
+import Students from './screens/Coach/Students';
+import ClassStudents from './screens/Coach/ClassStudents';
+import StudentDetails from './screens/Coach/StudentDetails';
 
 import AdminDashboard from './screens/Admin/AdminDashboard';
 import ReceptionistDashboard from './screens/Receptionist/ReceptionistDashboard';
@@ -18,6 +21,8 @@ import ReceptionistDashboard from './screens/Receptionist/ReceptionistDashboard'
 import NotificationScreen from './screens/Shared/NotificationScreen';
 import ProfileScreen from './screens/Shared/ProfileScreen';
 import ClassDetails from './screens/Shared/ClassDetails';
+import CoachClassDetail from './screens/Coach/CoachClassDetail';
+
 import RegisterClass from './screens/Shared/RegisterClass';
 import EnrolledClasses from './screens/Shared/EnrolledClasses';
 import Classes from './screens/Shared/Classes';
@@ -100,6 +105,11 @@ const StackNavigator = () => {
         options={{ title: 'Thông tin cá nhân' }}
       />
       <Stack.Screen
+        name="CoachClassDetail"
+        component={CoachClassDetail}
+        options={{ title: 'Chi tiết lớp học' }}
+      />
+      <Stack.Screen
         name="ClassDetails"
         component={ClassDetails}
         options={{ title: 'Chi tiết lớp học' }}
@@ -124,6 +134,21 @@ const StackNavigator = () => {
         component={CoachClasses}
         options={{ title: 'Lớp học của tôi' }}
       />
+      <Stack.Screen
+        name="Students"
+        component={Students}
+        options={{ title: 'Học viên của tôi' }}
+      />
+      <Stack.Screen
+        name="ClassStudents"
+        component={ClassStudents}
+        options={{ title: 'Danh sách học viên' }}
+      />
+      <Stack.Screen
+        name="StudentDetails"
+        component={StudentDetails}
+        options={{ title: 'Thông tin học viên' }}
+      />
     </Stack.Navigator>
   );
 }
@@ -135,7 +160,9 @@ const App = () => {
     <MyUserContext.Provider value={user}>
       <MyDispatchContext.Provider value={dispatch}>
         <NavigationContainer>
+          <MyUserProvider>
           <StackNavigator />
+          </MyUserProvider>
         </NavigationContainer>
       </MyDispatchContext.Provider>
     </MyUserContext.Provider>

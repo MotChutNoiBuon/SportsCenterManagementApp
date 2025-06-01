@@ -98,8 +98,14 @@ class ReceptionistViewSet(viewsets.ModelViewSet):
 class EnrollmentViewSet(viewsets.ModelViewSet):
     queryset = Enrollment.objects.all()
     serializer_class = EnrollmentSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    pagination_class = paginators.StandardResultsSetPagination
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        gym_class_id = self.request.query_params.get('gym_class')
+        if gym_class_id:
+            queryset = queryset.filter(gym_class__id=gym_class_id, status='pending')
+        return queryset
 
 
 class ProgressViewSet(viewsets.ModelViewSet):
@@ -108,6 +114,13 @@ class ProgressViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = paginators.StandardResultsSetPagination
 
+class TrainerEnrollmentListView(generics.ListAPIView):
+    serializer_class = EnrollmentSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        trainer = self.request.user
+        return Enrollment.objects.filter(gym_class__trainer=trainer, status='pending')
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()

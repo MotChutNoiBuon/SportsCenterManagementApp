@@ -1,250 +1,319 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-  ActivityIndicator,
-  RefreshControl,
-  Alert,
-  Image,
-  SafeAreaView,
+    View,
+    Text,
+    StyleSheet,
+    FlatList,
+    TouchableOpacity,
+    Image,
+    Alert,
+    ActivityIndicator,
+    RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { MyUserContext } from '../../contexts/UserContext';
 import { API_ENDPOINTS, authApis } from '../../api/apiConfig';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const ClassStudents = ({ route, navigation }) => {
-  const { classId, className } = route.params;
-  const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+const ClassStudents = () => {
+    const [students, setStudents] = useState([]);
+    const [refreshing, setRefreshing] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
+    const [className, setClassName] = useState('');
 
-  useEffect(() => {
-    fetchStudents();
-  }, []);
+    const navigation = useNavigation();
+    const route = useRoute();
+    const { classId } = route.params;
+    const currentUser = useContext(MyUserContext);
 
-  const fetchStudents = async () => {
-    try {
-      setLoading(true);
-      const token = await AsyncStorage.getItem('access_token');
-      const api = authApis(token);
-      
-      const response = await api.get(`${API_ENDPOINTS.classes}${classId}/students/`);
-      setStudents(response.data.results || response.data);
-    } catch (error) {
-      console.error('Error fetching students:', error.response?.data || error);
-      Alert.alert('Lỗi', 'Không thể tải danh sách học viên. Vui lòng thử lại sau.');
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+    useEffect(() => {
+        loadClassStudents();
+    }, [classId]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchStudents();
-  };
+    const loadClassStudents = async () => {
+        try {
+            setIsLoading(true);
+            const token = await AsyncStorage.getItem('access_token');
 
-  const renderStudentItem = ({ item }) => (
-    <View style={styles.studentItem}>
-      <Image
-        source={{
-          uri: item.avatar || 'https://res.cloudinary.com/du0oc4ky5/image/upload/v1741264222/olhl36hwfzoprvgjg2t6.jpg'
-        }}
-        style={styles.avatar}
-      />
-      <View style={styles.studentInfo}>
-        <Text style={styles.studentName}>{item.full_name}</Text>
-        <View style={styles.contactInfo}>
-          <View style={styles.contactRow}>
-            <Ionicons name="mail-outline" size={16} color="#666" />
-            <Text style={styles.contactText}>{item.email}</Text>
-          </View>
-          <View style={styles.contactRow}>
-            <Ionicons name="call-outline" size={16} color="#666" />
-            <Text style={styles.contactText}>{item.phone}</Text>
-          </View>
-        </View>
-      </View>
-      <TouchableOpacity 
-        style={styles.contactButton}
-        onPress={() => handleContactStudent(item)}
-      >
-        <Ionicons name="chatbubble-outline" size={24} color="#007AFF" />
-      </TouchableOpacity>
-    </View>
-  );
+            if (!token) {
+                Alert.alert('Lỗi', 'Vui lòng đăng nhập lại');
+                navigation.navigate('Login');
+                return;
+            }
 
-  const handleContactStudent = (student) => {
-    Alert.alert(
-      'Liên hệ học viên',
-      `Bạn muốn liên hệ với ${student.full_name} qua:`,
-      [
-        {
-          text: 'Email',
-          onPress: () => {
-            Alert.alert('Thông báo', 'Chức năng gửi email sẽ được thêm sau.');
-          }
-        },
-        {
-          text: 'Điện thoại',
-          onPress: () => {
-            Alert.alert('Thông báo', 'Chức năng gọi điện thoại sẽ được thêm sau.');
-          }
-        },
-        {
-          text: 'Hủy',
-          style: 'cancel'
+            const api = authApis(token);
+
+            // Lấy thông tin lớp học
+            const classResponse = await api.get(`/classes/${classId}/`);
+            setClassName(classResponse.data.name);
+
+            // Lấy danh sách học viên đã đăng ký
+            const enrollmentsResponse = await api.get(`${API_ENDPOINTS.enrollments}?gym_class=${classId}`);
+            const enrollments = enrollmentsResponse.data;
+
+            // Lấy thông tin chi tiết của từng học viên
+            const studentsData = await Promise.all(
+                enrollments.map(async (enrollment) => {
+                    const studentResponse = await api.get(`${API_ENDPOINTS.members}${enrollment.member}`);
+                    return {
+                        ...studentResponse.data,
+                        enrollmentId: enrollment.id,
+                        status: enrollment.status
+                    };
+                })
+            );
+
+            setStudents(studentsData);
+        } catch (error) {
+            console.error('Error loading class students:', error);
+            if (error.response?.status === 401) {
+                Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
+                navigation.navigate('Login');
+            } else {
+                Alert.alert('Lỗi', 'Không thể tải danh sách học viên. Vui lòng thử lại sau.');
+            }
+        } finally {
+            setIsLoading(false);
+            setRefreshing(false);
         }
-      ]
-    );
-  };
+    };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <Text style={styles.className}>{className}</Text>
-          <View style={styles.studentCountContainer}>
-            <Ionicons name="people-outline" size={20} color="#666" />
-            <Text style={styles.studentCount}>
-              {students.length} học viên
-            </Text>
-          </View>
-        </View>
-      </View>
+    const onRefresh = () => {
+        setRefreshing(true);
+        loadClassStudents();
+    };
 
-      {loading && !refreshing ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007AFF" />
-        </View>
-      ) : (
-        <FlatList
-          data={students}
-          renderItem={renderStudentItem}
-          keyExtractor={(item) => item.id.toString()}
-          contentContainerStyle={styles.listContainer}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Ionicons name="people-outline" size={64} color="#ccc" />
-              <Text style={styles.emptyText}>Chưa có học viên nào</Text>
+    const handleUpdateStatus = async (enrollmentId, newStatus) => {
+        try {
+            const token = await AsyncStorage.getItem('access_token');
+            if (!token) {
+                Alert.alert('Lỗi', 'Vui lòng đăng nhập lại');
+                navigation.navigate('Login');
+                return;
+            }
+
+            const api = authApis(token);
+            await api.patch(`${API_ENDPOINTS.enrollments}/${enrollmentId}`, {
+                status: newStatus
+            });
+
+            // Cập nhật lại danh sách học viên
+            loadClassStudents();
+            Alert.alert('Thành công', 'Cập nhật trạng thái thành công');
+        } catch (error) {
+            console.error('Error updating enrollment status:', error);
+            Alert.alert('Lỗi', 'Không thể cập nhật trạng thái');
+        }
+    };
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'pending':
+                return '#FFA500';
+            case 'approved':
+                return '#4CAF50';
+            case 'rejected':
+                return '#F44336';
+            default:
+                return '#666';
+        }
+    };
+
+    const getStatusText = (status) => {
+        switch (status) {
+            case 'pending':
+                return 'Chờ duyệt';
+            case 'approved':
+                return 'Đã duyệt';
+            case 'rejected':
+                return 'Từ chối';
+            default:
+                return status;
+        }
+    };
+
+    const renderStudentItem = ({ item }) => (
+        <TouchableOpacity
+            style={styles.studentCard}
+            onPress={() => navigation.navigate('StudentDetails', {
+                studentId: item.id,
+                studentData: item,
+                enrollmentId: item.enrollmentId,
+                status: item.status,
+                gym_class: classId
+            })}
+        >
+            <Image
+                source={{ uri: item.avatar || 'https://i.pravatar.cc/150?img=' + item.id }}
+                style={styles.avatar}
+            />
+            <View style={styles.studentInfo}>
+                <Text style={styles.studentName}>
+                    {item.first_name} {item.last_name}
+                </Text>
+                <Text style={styles.studentUsername}>@{item.username}</Text>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+                    <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
+                </View>
             </View>
-          }
-        />
-      )}
-    </SafeAreaView>
-  );
+            {item.status === 'pending' && (
+                <View style={styles.actionButtons}>
+                    <TouchableOpacity
+                        style={[styles.actionButton, styles.approveButton]}
+                        onPress={() => handleUpdateStatus(item.enrollmentId, 'approved')}
+                    >
+                        <Ionicons name="checkmark" size={20} color="white" />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.actionButton, styles.rejectButton]}
+                        onPress={() => handleUpdateStatus(item.enrollmentId, 'rejected')}
+                    >
+                        <Ionicons name="close" size={20} color="white" />
+                    </TouchableOpacity>
+                </View>
+            )}
+        </TouchableOpacity>
+    );
+
+    if (isLoading && !refreshing) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#0000ff" />
+                <Text style={styles.loadingText}>Đang tải danh sách học viên...</Text>
+            </View>
+        );
+    }
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <View style={styles.header}>
+                <Text style={styles.headerTitle}>{className}</Text>
+                <Text style={styles.headerSubtitle}>Danh sách học viên</Text>
+            </View>
+            <FlatList
+                data={students}
+                renderItem={renderStudentItem}
+                keyExtractor={(item) => item.id.toString()}
+                contentContainerStyle={styles.listContent}
+                refreshControl={
+                    <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+                }
+                ListEmptyComponent={
+                    <View style={styles.emptyContainer}>
+                        <Ionicons name="people-outline" size={50} color="#666" />
+                        <Text style={styles.emptyText}>Chưa có học viên nào</Text>
+                    </View>
+                }
+            />
+        </SafeAreaView>
+    );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: 'white',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  className: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#333',
-    flex: 1,
-  },
-  studentCountContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  studentCount: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 4,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  listContainer: {
-    padding: 16,
-  },
-  studentItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-  },
-  studentInfo: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  studentName: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  contactInfo: {
-    gap: 4,
-  },
-  contactRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  contactText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 8,
-  },
-  contactButton: {
-    padding: 8,
-    marginLeft: 8,
-  },
-  emptyContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 32,
-    marginTop: 32,
-  },
-  emptyText: {
-    fontSize: 16,
-    color: '#999',
-    marginTop: 16,
-    textAlign: 'center',
-  },
+    container: {
+        flex: 1,
+        backgroundColor: '#f5f5f5',
+    },
+    header: {
+        backgroundColor: 'white',
+        padding: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: '#e0e0e0',
+    },
+    headerTitle: {
+        fontSize: 20,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    headerSubtitle: {
+        fontSize: 16,
+        color: '#666',
+        marginTop: 4,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: '#666',
+    },
+    listContent: {
+        padding: 16,
+    },
+    studentCard: {
+        flexDirection: 'row',
+        backgroundColor: 'white',
+        padding: 16,
+        borderRadius: 8,
+        marginBottom: 12,
+        alignItems: 'center',
+    },
+    avatar: {
+        width: 50,
+        height: 50,
+        borderRadius: 25,
+    },
+    studentInfo: {
+        flex: 1,
+        marginLeft: 12,
+    },
+    studentName: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+    },
+    studentUsername: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 2,
+    },
+    statusBadge: {
+        alignSelf: 'flex-start',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        marginTop: 4,
+    },
+    statusText: {
+        color: 'white',
+        fontSize: 12,
+        fontWeight: '500',
+    },
+    actionButtons: {
+        flexDirection: 'row',
+        marginLeft: 8,
+    },
+    actionButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginLeft: 8,
+    },
+    approveButton: {
+        backgroundColor: '#4CAF50',
+    },
+    rejectButton: {
+        backgroundColor: '#F44336',
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        padding: 20,
+    },
+    emptyText: {
+        marginTop: 12,
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+    },
 });
 
 export default ClassStudents; 
