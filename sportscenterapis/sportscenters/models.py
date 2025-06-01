@@ -121,7 +121,7 @@ class Class(BaseModel):
 class Enrollment(BaseModel):
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
     gym_class = models.ForeignKey(Class, on_delete=models.CASCADE)
-    status = models.CharField(max_length=10, default='pending')
+    status = models.CharField(max_length=10, default='approved')
 
     def __str__(self):
         return f"{self.member.username} - {self.gym_class.name}"

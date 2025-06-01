@@ -136,14 +136,6 @@ const CoachClassDetail = () => {
                             {approvedCount}/{classDetails.max_members} học viên đã được duyệt
                         </Text>
                     </View>
-                    {pendingCount > 0 && (
-                        <View style={styles.infoRow}>
-                            <Ionicons name="time-outline" size={20} color="#FFA500" />
-                            <Text style={[styles.infoText, { color: '#FFA500' }]}>
-                                {pendingCount} học viên đang chờ duyệt
-                            </Text>
-                        </View>
-                    )}
                     <View style={styles.infoRow}>
                         <Ionicons name="cash-outline" size={20} color="#666" />
                         <Text style={styles.infoText}>

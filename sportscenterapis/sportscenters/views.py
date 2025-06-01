@@ -102,10 +102,13 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
+
+        # Lọc theo lớp học nếu có truyền gym_class
         gym_class_id = self.request.query_params.get('gym_class')
         if gym_class_id:
-            queryset = queryset.filter(gym_class__id=gym_class_id, status='pending')
-        return queryset
+            queryset = queryset.filter(gym_class_id=gym_class_id)
+
+        return queryset.select_related('member', 'gym_class')
 
 
 class ProgressViewSet(viewsets.ModelViewSet):
@@ -120,7 +123,7 @@ class TrainerEnrollmentListView(generics.ListAPIView):
 
     def get_queryset(self):
         trainer = self.request.user
-        return Enrollment.objects.filter(gym_class__trainer=trainer, status='pending')
+        return Enrollment.objects.filter(gym_class__trainer=trainer, status='approved')
 
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()

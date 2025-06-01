@@ -3,13 +3,13 @@ import apiConfig, { API_ENDPOINTS } from './apiConfig';
 import axios from 'axios';
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
+import BASE_URL  from './apiConfig'
 // Lấy danh sách lớp học
 export const getClasses = async () => {
 
   try {
     console.log('Gọi API lấy danh sách lớp học:', `${API_ENDPOINTS.classes}`);
-    const response = await apiConfig.get(API_ENDPOINTS.classes);
+    const response = await apiConfig.get(`${BASE_URL}${API_ENDPOINTS.classes}`);
     console.log('Kết quả API lớp học:', response.data);
     return response.data;
   } catch (error) {
@@ -23,7 +23,7 @@ export const getClasses = async () => {
 export const getClassDetails = async (classId) => {
   try {
     console.log('Gọi API lấy chi tiết lớp học:', `${API_ENDPOINTS.classes}${classId}/`);
-    const response = await apiConfig.get(`${API_ENDPOINTS.classes}${classId}/`);
+    const response = await apiConfig.get(`${BASE_URL}${API_ENDPOINTS.classes}${classId}/`);
     console.log('Kết quả API chi tiết lớp học:', response.data);
     return response.data;
   } catch (error) {

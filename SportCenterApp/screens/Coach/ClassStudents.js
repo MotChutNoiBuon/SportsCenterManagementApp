@@ -95,7 +95,7 @@ const ClassStudents = () => {
             }
 
             const api = authApis(token);
-            await api.patch(`${API_ENDPOINTS.enrollments}/${enrollmentId}`, {
+            await api.patch(`${API_ENDPOINTS.enrollments}${enrollmentId}`, {
                 status: newStatus
             });
 
@@ -146,7 +146,7 @@ const ClassStudents = () => {
             })}
         >
             <Image
-                source={{ uri: item.avatar || 'https://i.pravatar.cc/150?img=' + item.id }}
+                source={{ uri: `https://res.cloudinary.com/dfgnoyf71/${item.avatar}` || 'https://i.pravatar.cc/150?img=' + item.id }}
                 style={styles.avatar}
             />
             <View style={styles.studentInfo}>

@@ -137,18 +137,38 @@ const CoachDashboard = () => {
     navigation.navigate('CoachClasses');
   };
 
-  const handleLogout = async () => {
-    try {
-      await AsyncStorage.removeItem('access_token');
-      navigation.navigate('Login');
-    } catch (error) {
-      console.error('Lỗi khi đăng xuất:', error);
-      Alert.alert('Lỗi', 'Không thể đăng xuất. Vui lòng thử lại.');
-    }
-  };
-
   const handleViewStudents = () => {
     navigation.navigate('Students', { trainerId: currentUser.id });
+  };
+
+  const handleLogout = () => {
+    Alert.alert(
+      'Xác nhận đăng xuất',
+      'Bạn có chắc chắn muốn đăng xuất?',
+      [
+        {
+          text: 'Hủy',
+          style: 'cancel'
+        },
+        {
+          text: 'Đăng xuất',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await AsyncStorage.removeItem('access_token');
+              await AsyncStorage.removeItem('user');
+              navigation.reset({
+                index: 0,
+                routes: [{ name: 'Login' }],
+              });
+            } catch (error) {
+              console.error('Lỗi khi đăng xuất:', error);
+              Alert.alert('Lỗi', 'Không thể đăng xuất. Vui lòng thử lại.');
+            }
+          }
+        }
+      ]
+    );
   };
 
   const renderProfileModal = () => (
@@ -200,15 +220,6 @@ const CoachDashboard = () => {
             </View>
           </View>
 
-          <TouchableOpacity 
-            style={styles.editButton}
-            onPress={() => {
-              setShowProfileModal(false);
-              navigation.navigate('Profile', { userData });
-            }}
-          >
-            <Text style={styles.editButtonText}>Chỉnh sửa thông tin</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </Modal>
@@ -276,7 +287,7 @@ const CoachDashboard = () => {
           <View style={[styles.iconContainer, { backgroundColor: '#ffebee' }]}>
             <Ionicons name="log-out-outline" size={24} color="#f44336" />
           </View>
-          <Text style={styles.navText}>Đăng xuất</Text>
+          <Text style={[styles.navText, { color: '#f44336' }]}>Đăng xuất</Text>
         </TouchableOpacity>
       </View>
 

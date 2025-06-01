@@ -57,13 +57,24 @@ const StackNavigator = () => {
       <Stack.Screen
         name="CustomerDashboard"
         component={CustomerDashboard}
-        options={{ title: 'Home' }}
+        options={{
+          title: 'Home',
+          gestureEnabled: false,
+          headerLeft: () => null,
+          headerBackVisible: false,
+        }}
       />
       <Stack.Screen
         name="CoachDashboard"
         component={CoachDashboard}
-        options={{ title: 'Huấn luyện viên' }}
+        options={{
+          title: 'Huấn luyện viên',
+          gestureEnabled: false,
+          headerLeft: () => null,
+          headerBackVisible: false, 
+        }}
       />
+
       <Stack.Screen
         name="CoachList"
         component={CoachList}
@@ -79,19 +90,31 @@ const StackNavigator = () => {
       <Stack.Screen
         name="TrainerDashboard"
         component={CoachDashboard}
-        options={{ headerShown: false }}
+        options={{
+          gestureEnabled: false,
+          headerLeft: () => null,
+          headerBackVisible: false,
+        }}
       />
 
       <Stack.Screen
         name="AdminDashboard"
         component={AdminDashboard}
-        options={{ headerShown: false }}
+        options={{
+          gestureEnabled: false,
+          headerLeft: () => null,
+          headerBackVisible: false,
+        }}
       />
 
       <Stack.Screen
         name="ReceptionistDashboard"
         component={ReceptionistDashboard}
-        options={{ headerShown: false }}
+        options={{
+          gestureEnabled: false,
+          headerLeft: () => null,
+          headerBackVisible: false,
+        }}
       />
 
       <Stack.Screen
@@ -161,7 +184,7 @@ const App = () => {
       <MyDispatchContext.Provider value={dispatch}>
         <NavigationContainer>
           <MyUserProvider>
-          <StackNavigator />
+            <StackNavigator />
           </MyUserProvider>
         </NavigationContainer>
       </MyDispatchContext.Provider>
