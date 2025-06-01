@@ -14,11 +14,15 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MyUserContext } from '../../contexts/UserContext';
 import { API_ENDPOINTS, authApis } from '../../api/apiConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import InternalNews from '../Shared/InternalNews';
 
-const CoachDashboard = () => {
+const Tab = createBottomTabNavigator();
+
+const DashboardContent = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [todayClasses, setTodayClasses] = useState([]);
   const [upcomingClasses, setUpcomingClasses] = useState([]);
@@ -413,6 +417,44 @@ const CoachDashboard = () => {
         </View>
       )}
     </ScrollView>
+  );
+};
+
+const CoachDashboard = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+
+          if (route.name === 'Dashboard') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'News') {
+            iconName = focused ? 'newspaper' : 'newspaper-outline';
+          }
+
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: '#2196f3',
+        tabBarInactiveTintColor: 'gray',
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen 
+        name="Dashboard" 
+        component={DashboardContent}
+        options={{
+          title: 'Trang chủ',
+        }}
+      />
+      <Tab.Screen 
+        name="News" 
+        component={InternalNews}
+        options={{
+          title: 'Tin tức nội bộ',
+        }}
+      />
+    </Tab.Navigator>
   );
 };
 

@@ -102,9 +102,15 @@ class NotificationSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class InternalNewsSerializer(serializers.ModelSerializer):
+    author_name = serializers.SerializerMethodField()
+
     class Meta:
         model = InternalNews
-        fields = '__all__'
+        fields = ['id', 'title', 'content', 'created_date', 'updated_date', 'active', 'author_name']
+
+    def get_author_name(self, obj):
+        return f"{obj.author.first_name} {obj.author.last_name}"
+
 
 class StatisticSerializer(serializers.ModelSerializer):
     class Meta:

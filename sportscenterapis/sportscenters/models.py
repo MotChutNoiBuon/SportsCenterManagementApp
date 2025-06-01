@@ -191,7 +191,7 @@ class InternalNews(BaseModel):
     author = models.ForeignKey(Trainer, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     content = models.TextField()
-
+    created_date = models.DateTimeField(default=timezone.now())
     def __str__(self):
         return self.title
 

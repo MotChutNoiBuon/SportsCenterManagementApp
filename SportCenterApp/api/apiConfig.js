@@ -21,6 +21,7 @@ export const API_ENDPOINTS = {
   'enrollments': '/enrollments/',
   'progress': '/progress/',
   'appointments': '/appointments/',
+  'internalnews': '/internalnews/',
   'payments': '/payments/',
   'notifications': '/notifications/',
   'trainers': '/trainers/',

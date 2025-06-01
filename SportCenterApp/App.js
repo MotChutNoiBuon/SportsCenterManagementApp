@@ -24,6 +24,8 @@ import ClassDetails from './screens/Shared/ClassDetails';
 import CoachClassDetail from './screens/Coach/CoachClassDetail';
 
 import RegisterClass from './screens/Shared/RegisterClass';
+import InternalNews from './screens/Shared/InternalNews';
+
 import EnrolledClasses from './screens/Shared/EnrolledClasses';
 import Classes from './screens/Shared/Classes';
 import { MyDispatchContext, MyUserContext, UserProvider } from "./contexts/UserContext";
@@ -71,10 +73,19 @@ const StackNavigator = () => {
           title: 'Huấn luyện viên',
           gestureEnabled: false,
           headerLeft: () => null,
-          headerBackVisible: false, 
+          headerBackVisible: false,
         }}
       />
-
+      <Stack.Screen
+        name="InternalNews"
+        component={InternalNews}
+        options={{
+          title: 'Bản tin nội bộ',
+          gestureEnabled: false,
+          headerLeft: () => null,
+          headerBackVisible: false,
+        }}
+      />
       <Stack.Screen
         name="CoachList"
         component={CoachList}

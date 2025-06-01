@@ -146,6 +146,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
 
 class InternalNewsViewSet(viewsets.ModelViewSet):
     queryset = InternalNews.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = InternalNewsSerializer
     pagination_class = paginators.StandardResultsSetPagination
 
