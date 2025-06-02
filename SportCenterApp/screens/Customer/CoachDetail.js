@@ -33,11 +33,12 @@ const CoachDetail = ({ route, navigation }) => {
       
       const response = await api.get(API_ENDPOINTS.classes, {
         params: {
-          trainer_id: coach.id,
+          trainer: coach.id,
           status: 'active'
         }
       });
       
+      console.log('Coach classes response:', response.data);
       setClasses(response.data.results || response.data);
     } catch (error) {
       console.error('Error fetching coach classes:', error.response?.data || error);
@@ -152,7 +153,7 @@ const CoachDetail = ({ route, navigation }) => {
                 <View style={styles.participantsContainer}>
                   <Ionicons name="people-outline" size={16} color="#666" />
                   <Text style={styles.participantsText}>
-                    {classItem.current_participants || 0}/{classItem.max_participants || 20} học viên
+                    {classItem.current_capacity || 0}/{classItem.max_members || 20} học viên
                   </Text>
                 </View>
               </View>

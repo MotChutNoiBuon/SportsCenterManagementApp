@@ -1,5 +1,5 @@
 import { apiClient } from './apiClient';
-import apiConfig, { API_ENDPOINTS } from './apiConfig';
+import apiConfig, { API_ENDPOINTS, authApis } from './apiConfig';
 import axios from 'axios';
 import { Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -19,11 +19,18 @@ export const getClasses = async () => {
   }
 };
 
-// Lấy chi tiết lớp học
 export const getClassDetails = async (classId) => {
   try {
-    console.log('Gọi API lấy chi tiết lớp học:', `${API_ENDPOINTS.classes}${classId}/`);
-    const response = await apiConfig.get(`${BASE_URL}${API_ENDPOINTS.classes}${classId}/`);
+    const token = await AsyncStorage.getItem('access_token');
+    if (!token) {
+      throw new Error('Không có access token');
+    }
+
+    const api = authApis(token);
+    const url = `${API_ENDPOINTS.classes}${classId}/`;
+    console.log('Gọi API lấy chi tiết lớp học:', url);
+    
+    const response = await api.get(url);
     console.log('Kết quả API chi tiết lớp học:', response.data);
     return response.data;
   } catch (error) {
@@ -32,56 +39,61 @@ export const getClassDetails = async (classId) => {
     throw error;
   }
 };
+//dki lop
 
-// Đăng ký lớp học
 export const enrollClass = async (classId) => {
   try {
-    console.log('Bắt đầu gọi API đăng ký lớp học');
-    console.log('Class ID:', classId);
-    
+    console.log('🔔 Bắt đầu gọi API đăng ký lớp học');
+    console.log('📌 Class ID:', classId);
+
     const token = await AsyncStorage.getItem('access_token');
     if (!token) {
       throw new Error('Không tìm thấy token xác thực');
     }
 
-    // Kiểm tra xem đã đăng ký chưa
-    const enrollmentsResponse = await axios({
-      method: 'get',
-      url: `${apiConfig.defaults.baseURL}${API_ENDPOINTS.enrollments}`,
+    // 🔍 Lấy ID người dùng hiện tại
+    const userResponse = await axios.get(`${apiConfig.defaults.baseURL}${API_ENDPOINTS['current-user']}`, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
+      }
+    });
+    const userId = userResponse.data.id;
+
+    // 📥 Lấy danh sách đăng ký
+    const enrollmentsResponse = await axios.get(`${apiConfig.defaults.baseURL}${API_ENDPOINTS.enrollments}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       }
     });
 
     const enrollments = enrollmentsResponse.data.results || enrollmentsResponse.data || [];
-    const isEnrolled = enrollments.some(enrollment => enrollment.gym_class === classId);
+    const myEnrollments = enrollments.filter(e => e.member === userId);
+    const isEnrolled = myEnrollments.some(e => e.gym_class === classId);
 
     if (isEnrolled) {
+      console.log('⚠️ Bạn đã đăng ký lớp học này');
       return { status: 'already_enrolled', message: 'Bạn đã đăng ký lớp học này rồi' };
     }
 
     const requestData = { gym_class: classId };
-    console.log('Request data:', requestData);
+    console.log('📤 Request data:', requestData);
 
-    const response = await axios({
-      method: 'post',
-      url: `${apiConfig.defaults.baseURL}${API_ENDPOINTS.enrollments}`,
-      data: requestData,
+    // ✅ Gửi đăng ký
+    const response = await axios.post(`${apiConfig.defaults.baseURL}${API_ENDPOINTS.enrollments}`, requestData, {
       headers: {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
         'Accept': 'application/json'
       }
     });
 
-    console.log('Response status:', response.status);
-    console.log('Response data:', response.data);
-    
+    console.log('✅ Đăng ký thành công:', response.data);
     return { status: 'success', data: response.data };
+
   } catch (error) {
-    console.error('Chi tiết lỗi:', {
+    console.error('❌ Lỗi khi đăng ký lớp học:', {
       message: error.message,
       response: error.response?.data,
       status: error.response?.status,
@@ -102,11 +114,10 @@ export const enrollClass = async (classId) => {
     } else if (error.request) {
       errorMessage = 'Không thể kết nối đến máy chủ. Vui lòng kiểm tra kết nối mạng.';
     }
-    
+
     throw new Error(errorMessage);
   }
 };
-
 // Lấy danh sách lớp học đã đăng ký
 export const getEnrollments = async () => {
   try {

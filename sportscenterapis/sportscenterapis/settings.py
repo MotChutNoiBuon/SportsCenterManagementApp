@@ -14,13 +14,8 @@ from pathlib import Path
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
-from dotenv import load_dotenv
-import os
-
-from dotenv import load_dotenv
 
 import sportscenters.apps
-load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -183,11 +178,11 @@ CORS_ALLOWED_ORIGINS = [
     'http://192.168.20.162:8000',
     'http://127.0.0.1:8000',
     'http://192.168.2.9:8000',
-    'http://192.168.3.14:8000'
-
+    'http://192.168.3.14:8000',
+    'http://192.168.152.183:8000',
 ]
 ALLOWED_HOSTS = ['*']
 
-CLIENT_ID = 'FUmqYnUhP0QfEGYJZ7opuvmpwBLySi09fUfR1hvc'
-CLIENT_SECRET = '4wab4GxtWeKJogUa7DHPNZjHPHdCkfeWBZv4Ja6JruJaVTpIvIhAhbOsfjY4nvlBc3zYLAblz33I6B4RrWtUj1jHmeoApS8qrjzNZ29JihZelCMw18MssiuAVaX93euq'
+CLIENT_ID = 'n6NdlScF6H84xLjzMv6zp8PiF0mXP4SHNZq7ZqOD'
+CLIENT_SECRET = 'Owoy66c0GfDFFh6qyMIcpb5HgIk2gQ0eZoK8QvN56G6NyuwJa6jMCIAnMizm6mojrGWpPfAKiRRRD9HwP1MzZWXU4DpU8jZWXib89f158ZOe2Sy8ZwirNcxqG7yUa20u'
 

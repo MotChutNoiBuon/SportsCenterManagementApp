@@ -3,12 +3,12 @@ import axios from "axios"
 import AsyncStorage from '@react-native-async-storage/async-storage';
 export const DEV_MODE = false;
 
-let BASE_URL = 'http://192.168.3.14:8000/'
+let BASE_URL = 'http://192.168.152.183:8000/'
 
 
 export const OAUTH2_CONFIG = {
-  client_id: 'FUmqYnUhP0QfEGYJZ7opuvmpwBLySi09fUfR1hvc',
-  client_secret: '4wab4GxtWeKJogUa7DHPNZjHPHdCkfeWBZv4Ja6JruJaVTpIvIhAhbOsfjY4nvlBc3zYLAblz33I6B4RrWtUj1jHmeoApS8qrjzNZ29JihZelCMw18MssiuAVaX93euq'
+  client_id: 'n6NdlScF6H84xLjzMv6zp8PiF0mXP4SHNZq7ZqOD',
+  client_secret: 'Owoy66c0GfDFFh6qyMIcpb5HgIk2gQ0eZoK8QvN56G6NyuwJa6jMCIAnMizm6mojrGWpPfAKiRRRD9HwP1MzZWXU4DpU8jZWXib89f158ZOe2Sy8ZwirNcxqG7yUa20u'
 };
 
 export const API_ENDPOINTS = {
@@ -19,6 +19,7 @@ export const API_ENDPOINTS = {
   'users': '/users/',
   'classes': '/classes/',
   'enrollments': '/enrollments/',
+  'enrolledClasses':'/enrollments/',
   'progress': '/progress/',
   'appointments': '/appointments/',
   'internalnews': '/internalnews/',

@@ -101,7 +101,7 @@ const Classes = () => {
         </Text>
         <View style={styles.participantsContainer}>
           <Text style={styles.participantsText}>
-            {item.current_participants || 0}/{item.max_participants || 20} học viên
+            {item.current_capacity || 0}/{item.max_members || 20} học viên
           </Text>
         </View>
       </View>
@@ -119,6 +119,12 @@ const Classes = () => {
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity 
+        style={styles.enrolledButton}
+        onPress={() => navigation.navigate('EnrolledClasses')}
+      >
+        <Text style={styles.enrolledButtonText}>Lớp học đã đăng ký</Text>
+      </TouchableOpacity>
       <FlatList
         data={classes}
         renderItem={renderClassItem}
@@ -202,6 +208,18 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     color: '#666',
+  },
+  enrolledButton: {
+    backgroundColor: '#007AFF',
+    padding: 12,
+    margin: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  enrolledButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
 

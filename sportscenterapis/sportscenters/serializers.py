@@ -21,9 +21,35 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return instance
 
 class ClassSerializer(ModelSerializer):
+    is_enrolled = serializers.SerializerMethodField()
+    trainer_info = serializers.SerializerMethodField()
+
     class Meta:
         model = Class
-        fields = '__all__'
+        fields = [
+            'id', 'name', 'description', 'trainer', 'trainer_info',
+            'start_time', 'end_time', 'current_capacity', 'max_members',
+            'status', 'price', 'is_enrolled'
+        ]
+
+    def get_is_enrolled(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return Enrollment.objects.filter(
+                member=request.user.member,
+                gym_class=obj,
+                status='approved'
+            ).exists()
+        return False
+
+    def get_trainer_info(self, obj):
+        if obj.trainer:
+            return {
+                'id': obj.trainer.id,
+                'full_name': f"{obj.trainer.first_name} {obj.trainer.last_name}",
+                'specialization': obj.trainer.specialization
+            }
+        return None
 
 class TrainerSerializer(ModelSerializer):
     class Meta:
@@ -36,7 +62,7 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ['id','first_name', 'last_name', 'username', 'password', 'avatar','phone','email','role']
+        fields = ['id', 'first_name', 'last_name', 'username', 'password', 'avatar', 'phone', 'email', 'role']
         extra_kwargs = {
             'password': {
                 'write_only': True
@@ -44,26 +70,28 @@ class UserSerializer(serializers.ModelSerializer):
         }
 
     def create(self, validated_data):
-        data = validated_data.copy()
-        u = User(**data)
-        u.set_password(u.password)
-        u.save()
+        password = validated_data.pop('password')
+        role = validated_data.get('role', 'member')  # Mặc định là member nếu không truyền
 
-        return u
+        # Tạo bản ghi Member nếu là hội viên
+        if role == 'member':
+            user = Member(**validated_data)
+        else:
+            user = User(**validated_data)
+
+        user.set_password(password)
+        user.save()
+        return user
 
     def update(self, instance, validated_data):
         if 'password' in validated_data:
-            instance.set_password(validated_data['password'])
-            instance.save()
-
-        return instance
-
+            instance.set_password(validated_data.pop('password'))
+        return super().update(instance, validated_data)
 
     def to_representation(self, instance):
         d = super().to_representation(instance)
         d['avatar'] = instance.avatar.url if instance.avatar else ''
         return d
-
 
 class MemberSerializer(serializers.ModelSerializer):
     class Meta:
@@ -76,10 +104,22 @@ class ReceptionistSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class EnrollmentSerializer(serializers.ModelSerializer):
+    member = serializers.PrimaryKeyRelatedField(read_only=True)
     member_detail = UserSerializer(source='member', read_only=True)
+    class_detail = ClassSerializer(source='gym_class', read_only=True)
+
     class Meta:
         model = Enrollment
-        fields = ['id', 'status', 'member', 'member_detail', 'gym_class']
+        fields = [
+            'id',
+            'status',
+            'member',
+            'member_detail',
+            'gym_class',
+            'class_detail',
+        ]
+
+
 
 class ProgressSerializer(serializers.ModelSerializer):
     class Meta:

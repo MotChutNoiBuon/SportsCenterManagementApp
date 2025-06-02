@@ -66,8 +66,8 @@ export default function LoginScreen() {
       try {
         const res = await apiConfig.post(API_ENDPOINTS['login'], {
           ...user,
-          client_id: 'FUmqYnUhP0QfEGYJZ7opuvmpwBLySi09fUfR1hvc',
-          client_secret: '4wab4GxtWeKJogUa7DHPNZjHPHdCkfeWBZv4Ja6JruJaVTpIvIhAhbOsfjY4nvlBc3zYLAblz33I6B4RrWtUj1jHmeoApS8qrjzNZ29JihZelCMw18MssiuAVaX93euq',
+          client_id: 'n6NdlScF6H84xLjzMv6zp8PiF0mXP4SHNZq7ZqOD',
+          client_secret: 'Owoy66c0GfDFFh6qyMIcpb5HgIk2gQ0eZoK8QvN56G6NyuwJa6jMCIAnMizm6mojrGWpPfAKiRRRD9HwP1MzZWXU4DpU8jZWXib89f158ZOe2Sy8ZwirNcxqG7yUa20u',
           grant_type: 'password'
         });
 
@@ -88,7 +88,7 @@ export default function LoginScreen() {
         // Điều hướng theo role (nếu có)
         console.log('User role:', u.data.role);
         
-        if (u.data.role === 'customer') {
+        if (u.data.role === 'member') {
           console.log('Navigating to CustomerDashboard');
           nav.navigate("CustomerDashboard");
         } else if (u.data.role === 'trainer') {

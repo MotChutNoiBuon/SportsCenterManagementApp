@@ -1,4 +1,5 @@
 from rest_framework import viewsets, generics, status, parsers, permissions, filters
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
 from django.utils.timezone import now
@@ -20,6 +21,7 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 
+
 class ClassViewSet(viewsets.ModelViewSet):
     serializer_class = ClassSerializer
     permission_classes = [permissions.IsAuthenticated]
@@ -31,6 +33,11 @@ class ClassViewSet(viewsets.ModelViewSet):
         if trainer_id:
             queryset = queryset.filter(trainer_id=trainer_id)
         return queryset
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
@@ -66,7 +73,6 @@ class TrainerViewSet(viewsets.ModelViewSet):
     pagination_class = paginators.StandardResultsSetPagination
 
 
-
 class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.UpdateAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = serializers.UserSerializer
@@ -81,6 +87,7 @@ class UserViewSet(viewsets.ViewSet, generics.CreateAPIView, generics.UpdateAPIVi
     @action(methods=['get'], url_path='current-user', detail=False, permission_classes=[permissions.IsAuthenticated])
     def get_current_user(self, request):
         return Response(serializers.UserSerializer(request.user).data)
+
 
 class MemberViewSet(viewsets.ModelViewSet):
     queryset = Member.objects.all()
@@ -102,13 +109,42 @@ class EnrollmentViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         queryset = super().get_queryset()
-
-        # Lọc theo lớp học nếu có truyền gym_class
         gym_class_id = self.request.query_params.get('gym_class')
+        member_id = self.request.query_params.get('member')
         if gym_class_id:
             queryset = queryset.filter(gym_class_id=gym_class_id)
+        if member_id:
+            queryset = queryset.filter(member_id=member_id)
 
         return queryset.select_related('member', 'gym_class')
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        if not hasattr(user, 'member'):
+            raise PermissionDenied("Tài khoản không phải là hội viên (Member).")
+
+        member = user.member
+        gym_class = serializer.validated_data['gym_class']
+
+        # Kiểm tra số lượng học viên hiện tại
+        if gym_class.current_capacity >= gym_class.max_members:
+            raise ValidationError("Lớp học đã đủ số lượng học viên.")
+
+        # Kiểm tra xem đã đăng ký chưa
+        if Enrollment.objects.filter(member=member, gym_class=gym_class).exists():
+            raise ValidationError("Bạn đã đăng ký lớp học này rồi.")
+
+        # Tạo enrollment và cập nhật số lượng học viên
+        enrollment = serializer.save(member=member)
+        gym_class.current_capacity += 1
+        gym_class.save()
+
+    def perform_destroy(self, instance):
+        # Cập nhật số lượng học viên khi hủy đăng ký
+        gym_class = instance.gym_class
+        gym_class.current_capacity = max(0, gym_class.current_capacity - 1)
+        gym_class.save()
+        instance.delete()
 
 
 class ProgressViewSet(viewsets.ModelViewSet):
@@ -116,6 +152,7 @@ class ProgressViewSet(viewsets.ModelViewSet):
     serializer_class = ProgressSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = paginators.StandardResultsSetPagination
+
 
 class TrainerEnrollmentListView(generics.ListAPIView):
     serializer_class = EnrollmentSerializer
@@ -125,11 +162,13 @@ class TrainerEnrollmentListView(generics.ListAPIView):
         trainer = self.request.user
         return Enrollment.objects.filter(gym_class__trainer=trainer, status='approved')
 
+
 class AppointmentViewSet(viewsets.ModelViewSet):
     queryset = Appointment.objects.all()
     serializer_class = AppointmentSerializer
     permission_classes = [permissions.IsAuthenticated]
     pagination_class = paginators.StandardResultsSetPagination
+
 
 class PaymentViewSet(viewsets.ModelViewSet):
     queryset = Payment.objects.all()
@@ -150,9 +189,11 @@ class InternalNewsViewSet(viewsets.ModelViewSet):
     serializer_class = InternalNewsSerializer
     pagination_class = paginators.StandardResultsSetPagination
 
+
 class StatisticViewSet(viewsets.ModelViewSet):
     queryset = Statistic.objects.all()
     serializer_class = StatisticSerializer
+
     def get_member_stats(self, period, start_date, end_date):
         """
         Lấy thống kê hội viên với cache.
