@@ -35,7 +35,7 @@ class User(AbstractUser):
         return f"{self.username} - {self.role}"
 
 
-# Bảng hội viên
+
 class Member(User):
     payment_status = models.CharField(max_length=10, default='unpaid')
     join_date = models.DateField(null=True, blank=True)
@@ -46,6 +46,7 @@ class Member(User):
             self.join_date = timezone.now().date()
         super().save(*args, **kwargs)
 
+
     def __str__(self):
         return f"{self.username} - {self.payment_status}"
 
@@ -53,7 +54,7 @@ class Member(User):
         verbose_name = 'Member'
         verbose_name_plural = 'Members'
 
-# Bảng huấn luyện viên
+
 class Trainer(User):
     SPECIALIZATIONS = [
         ('gym', 'Gym'),
@@ -66,7 +67,7 @@ class Trainer(User):
     experience_years = models.IntegerField(null=True)
 
     def save(self, *args, **kwargs):
-        self.role = 'trainer'  # Tự động gán role là 'trainer'
+        self.role = 'trainer'
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -76,7 +77,7 @@ class Trainer(User):
         verbose_name = 'Trainer'
         verbose_name_plural = 'Trainers'
 
-# Bảng nhân viên lễ tân
+
 class Receptionist(User):
     WORK_SHIFTS = [
         ('morning', 'Morning'),
@@ -94,14 +95,16 @@ class Receptionist(User):
         verbose_name = 'Receptionist'
         verbose_name_plural = 'Receptionists'
 
-# Bảng lớp học
+
 class Class(BaseModel):
 
     name = models.CharField(max_length=100)
     description = models.TextField()
     trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE)
-    start_time = models.DateTimeField(null=True)
-    end_time = models.DateTimeField()
+    start_time = models.DateTimeField(default=timezone.now)
+    end_time = models.DateTimeField(default=timezone.now)
+    deleted_at = models.DateTimeField(null=True, blank=True, default=None)
+    current_capacity = models.PositiveIntegerField(default=0)
     max_members = models.IntegerField()
     status = models.CharField(max_length=20, choices=[('active', 'Active'), ('cancelled', 'Cancelled'), ('completed', 'Completed')])
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -114,43 +117,17 @@ class Class(BaseModel):
         verbose_name = 'Class'
         verbose_name_plural = 'Classes'
 
-# Bảng đăng ký lớp học
-from django.db import models
 
 class Enrollment(BaseModel):
-    """
-    Model lưu trữ thông tin đăng ký lớp học của thành viên.
-    Mỗi bản ghi liên kết một thành viên với một lớp học và có trạng thái.
-    """
-    member = models.ForeignKey(
-        'Member',
-        on_delete=models.CASCADE,
-        verbose_name="Thành viên",
-        help_text="Thành viên đăng ký lớp học."
-    )
-    gym_class = models.ForeignKey(
-        'Class',
-        on_delete=models.CASCADE,
-        related_name='enrollments',
-        verbose_name="Lớp học",
-        help_text="Lớp học được đăng ký."
-    )
-    status = models.CharField(
-        max_length=10,
-        default='pending',
-        verbose_name="Trạng thái",
-        help_text="Trạng thái đăng ký (ví dụ: pending, confirmed)."
-    )
+    member = models.ForeignKey(Member, on_delete=models.CASCADE)
+    gym_class = models.ForeignKey(Class, on_delete=models.CASCADE)
+    status = models.CharField(max_length=10, default='approved')
 
     def __str__(self):
         return f"{self.member.username} - {self.gym_class.name}"
 
-    class Meta:
-        unique_together = ('gym_class', 'member')
-        verbose_name = "Đăng ký"
-        verbose_name_plural = "Các đăng ký"
 
-# Bảng tiến độ tập luyện
+
 class Progress(BaseModel):
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
     trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE)
@@ -165,7 +142,7 @@ class Progress(BaseModel):
         verbose_name = 'Progress'
         verbose_name_plural = 'Progresses'
 
-# Bảng lịch tư vấn riêng
+
 class Appointment(BaseModel):
     member = models.ForeignKey(Member, on_delete=models.CASCADE)
     trainer = models.ForeignKey(Trainer, on_delete=models.CASCADE)
@@ -174,7 +151,7 @@ class Appointment(BaseModel):
     def __str__(self):
         return f"{self.member.username} - {self.date_time}"
 
-# Bảng thanh toán
+
 class Payment(models.Model):
     PAYMENT_METHODS = [
         ('momo', 'Momo'),
@@ -192,7 +169,7 @@ class Payment(models.Model):
     def __str__(self):
         return f"{self.member.username} - {self.status}"
 
-# Bảng thông báo
+
 class Notification(models.Model):
     NOTIFICATION_TYPES = [
         ('class_schedule', 'Class Schedule'),
@@ -209,12 +186,12 @@ class Notification(models.Model):
     def __str__(self):
         return f"{self.member.username} - {self.type}"
 
-# Bảng tin nội bộ
+
 class InternalNews(BaseModel):
     author = models.ForeignKey(Trainer, on_delete=models.CASCADE)
     title = models.CharField(max_length=200)
     content = models.TextField()
-
+    created_date = models.DateTimeField(default=timezone.now())
     def __str__(self):
         return self.title
 

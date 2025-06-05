@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
   ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -18,6 +19,7 @@ const CoachDetail = ({ route, navigation }) => {
   const [loading, setLoading] = useState(false);
   const [classes, setClasses] = useState([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchCoachClasses();
@@ -25,31 +27,31 @@ const CoachDetail = ({ route, navigation }) => {
 
   const fetchCoachClasses = async () => {
     try {
+      setLoadingClasses(true);
       const token = await AsyncStorage.getItem('access_token');
       const api = authApis(token);
       
-      console.log('Fetching classes for trainer:', coach.id);
-      console.log('API URL:', `${API_ENDPOINTS.classes}?trainer_id=${coach.id}&status=active`);
-      
       const response = await api.get(API_ENDPOINTS.classes, {
         params: {
-          trainer_id: coach.id,
+          trainer: coach.id,
           status: 'active'
         }
       });
       
-      console.log('API Response:', response.data);
+      console.log('Coach classes response:', response.data);
       setClasses(response.data.results || response.data);
-      setLoadingClasses(false);
     } catch (error) {
       console.error('Error fetching coach classes:', error.response?.data || error);
-      console.error('Error details:', {
-        status: error.response?.status,
-        data: error.response?.data,
-        message: error.message
-      });
+      Alert.alert('Lỗi', 'Không thể tải danh sách lớp học. Vui lòng thử lại sau.');
+    } finally {
       setLoadingClasses(false);
+      setRefreshing(false);
     }
+  };
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchCoachClasses();
   };
 
   const getSpecializationText = (specialization) => {
@@ -62,75 +64,69 @@ const CoachDetail = ({ route, navigation }) => {
     return specializations[specialization] || specialization;
   };
 
+  const formatDateTime = (dateTimeStr) => {
+    const date = new Date(dateTimeStr);
+    return date.toLocaleString('vi-VN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   const handleContact = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
       const token = await AsyncStorage.getItem('access_token');
       const api = authApis(token);
       
-      const response = await api.post(API_ENDPOINTS.appointments, {
-        trainer: coach.id,
-        date_time: new Date().toISOString(),
+      await api.post(API_ENDPOINTS.contact, {
+        trainer_id: coach.id,
+        message: 'Tôi muốn được tư vấn về các lớp học'
       });
-
-      if (response.status === 201) {
-        Alert.alert(
-          'Thành công',
-          'Yêu cầu tư vấn đã được gửi. Huấn luyện viên sẽ liên hệ với bạn sớm nhất.',
-          [{ text: 'OK' }]
-        );
-      }
+      
+      Alert.alert('Thành công', 'Yêu cầu tư vấn đã được gửi. Chúng tôi sẽ liên hệ với bạn sớm nhất có thể.');
     } catch (error) {
-      console.error('Error creating appointment:', error.response?.data || error);
-      Alert.alert(
-        'Lỗi',
-        'Không thể gửi yêu cầu tư vấn. Vui lòng thử lại sau.',
-        [{ text: 'OK' }]
-      );
+      console.error('Error sending contact request:', error);
+      Alert.alert('Lỗi', 'Không thể gửi yêu cầu tư vấn. Vui lòng thử lại sau.');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatDateTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('vi-VN', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView 
+      style={styles.container}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.header}>
         <Image
-          source={{ uri: coach.avatar || 'https://via.placeholder.com/200' }}
+          source={{
+            uri: coach.avatar || 'https://res.cloudinary.com/du0oc4ky5/image/upload/v1741264222/olhl36hwfzoprvgjg2t6.jpg'
+          }}
           style={styles.avatar}
         />
-        <Text style={styles.name}>{coach.full_name || coach.username}</Text>
+        <Text style={styles.name}>{coach.full_name}</Text>
         <View style={styles.specializationContainer}>
           <Ionicons name="fitness-outline" size={20} color="#666" />
-          <Text style={styles.specialization}>{getSpecializationText(coach.specialization)}</Text>
+          <Text style={styles.specialization}>
+            {getSpecializationText(coach.specialization)}
+          </Text>
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Thông tin cá nhân</Text>
+        <Text style={styles.sectionTitle}>Thông tin liên hệ</Text>
         <View style={styles.infoItem}>
           <Ionicons name="mail-outline" size={24} color="#666" />
           <Text style={styles.infoText}>{coach.email}</Text>
         </View>
         <View style={styles.infoItem}>
           <Ionicons name="call-outline" size={24} color="#666" />
-          <Text style={styles.infoText}>{coach.phone || 'Chưa cập nhật'}</Text>
-        </View>
-        <View style={styles.infoItem}>
-          <Ionicons name="time-outline" size={24} color="#666" />
-          <Text style={styles.infoText}>{coach.experience_years || 0} năm kinh nghiệm</Text>
+          <Text style={styles.infoText}>{coach.phone}</Text>
         </View>
       </View>
 
@@ -154,6 +150,12 @@ const CoachDetail = ({ route, navigation }) => {
                 <Text style={styles.classPrice}>
                   {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(classItem.price)}
                 </Text>
+                <View style={styles.participantsContainer}>
+                  <Ionicons name="people-outline" size={16} color="#666" />
+                  <Text style={styles.participantsText}>
+                    {classItem.current_capacity || 0}/{classItem.max_members || 20} học viên
+                  </Text>
+                </View>
               </View>
               <Ionicons name="chevron-forward" size={24} color="#666" />
             </TouchableOpacity>
@@ -258,6 +260,16 @@ const styles = StyleSheet.create({
     marginTop: 4,
     fontWeight: '500',
   },
+  participantsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  participantsText: {
+    fontSize: 14,
+    color: '#666',
+    marginLeft: 4,
+  },
   noData: {
     fontSize: 16,
     color: '#999',
@@ -281,7 +293,7 @@ const styles = StyleSheet.create({
   contactButtonText: {
     color: 'white',
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
 });
 

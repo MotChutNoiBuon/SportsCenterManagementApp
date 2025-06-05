@@ -2,6 +2,8 @@ from django.urls import path, include
 from . import views
 from rest_framework import routers
 
+from .views import TrainerClassListView, TrainerStudentListView
+
 router = routers.DefaultRouter()
 router.register('users', views.UserViewSet, basename='user')
 router.register('members', views.MemberViewSet, basename='member')
@@ -17,4 +19,8 @@ router.register('internalnews', views.InternalNewsViewSet, basename='internalnew
 router.register(r'stats', views.StatisticViewSet, basename='stats')
 urlpatterns = [
     path('', include(router.urls)),
-    path('users/current-user/', views.UserViewSet.get_current_user, name='current_user'),  ]
+    path('users/current-user/', views.UserViewSet.get_current_user, name='current_user'),
+    path('trainer/enrollments/', TrainerClassListView.as_view(), name='trainer-enrollments'),
+    path('trainer/students/', TrainerStudentListView.as_view(), name='trainer-student-list'),
+
+]

@@ -11,19 +11,6 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 
 
-'''
-list_display: Hiển thị các trường quan trọng.
-
-list_filter: Lọc theo các trường có ý nghĩa.
-
-search_fields: Tìm kiếm theo các trường phổ biến.
-
-ordering: Sắp xếp mặc định.
-
-date_hierarchy: Thêm thanh filter theo ngày.
-
-readonly_fields: Chỉ cho phép xem một số trường.
-'''
 class UserForm(forms.ModelForm):
     password = forms.CharField(widget=forms.PasswordInput, required=False)
 
@@ -40,7 +27,7 @@ class BaseUserAdmin(admin.ModelAdmin):
             if not password.startswith('pbkdf2_'):
                 obj.set_password(password)
             else:
-                obj.password = password  # đã băm sẵn
+                obj.password = password
         super().save_model(request, obj, form, change)
 
 
@@ -59,7 +46,6 @@ class MyAdminSite(admin.AdminSite):
         start_date = timezone.now() - timedelta(days=365)
         end_date = timezone.now()
 
-        # Lấy dữ liệu thống kê
         member_stats = viewset.get_member_stats('monthly', start_date, end_date)
         revenue_stats = viewset.get_revenue_stats('monthly', start_date, end_date)
         class_stats = viewset.get_class_stats('monthly', start_date, end_date)
@@ -176,10 +162,10 @@ class ReceptionistAdmin(BaseUserAdmin):
     avatar_view.short_description = 'Avatar'
 
 class ClassAdmin(admin.ModelAdmin):
-    list_display = ('name', 'trainer', 'status', 'price', 'start_time', 'end_time')
+    list_display = ('name', 'trainer', 'start_time','end_time', 'status', 'price')
     list_filter = ('status', 'trainer')
     search_fields = ('name', 'trainer__full_name')
-    ordering = ['start_time']
+    ordering = ['-start_time']
 
 
 class EnrollmentAdmin(admin.ModelAdmin):

@@ -74,6 +74,7 @@ const ProfileScreen = ({ route }) => {
         <Text style={styles.role}>
           {userData?.role === 'trainer' ? 'Huấn luyện viên' : 
            userData?.role === 'member' ? 'Học viên' : 
+           userData?.role === 'receptionist' ? 'Lễ tân' : 
            userData?.role === 'admin' ? 'Quản trị viên' : 'Không rõ vai trò'}
         </Text>
       </View>
@@ -88,6 +89,7 @@ const ProfileScreen = ({ route }) => {
         {renderInfoItem('person-outline', 'Vai trò', 
           userData?.role === 'trainer' ? 'Huấn luyện viên' : 
           userData?.role === 'member' ? 'Học viên' : 
+          userData?.role === 'receptionist' ? 'Lễ tân' : 
           userData?.role === 'admin' ? 'Quản trị viên' : 'Không rõ vai trò'
         )}
       </View>

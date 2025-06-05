@@ -10,14 +10,16 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import CustomButton from '../../components/CustomButton';
-import { getClassDetails, enrollClass } from '../../api/classService';
+import { getClassDetails, enrollClass, cancelEnrollment } from '../../api/classService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_ENDPOINTS, authApis } from '../../api/apiConfig';
 
 const ClassDetails = ({ route, navigation }) => {
   const { classId } = route.params;
   const [classData, setClassData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [enrolling, setEnrolling] = useState(false);
+  const [trainer, setTrainer] = useState(null);
 
   useEffect(() => {
     loadClassData();
@@ -28,6 +30,14 @@ const ClassDetails = ({ route, navigation }) => {
       setLoading(true);
       const data = await getClassDetails(classId);
       setClassData(data);
+      
+      // Fetch trainer details if trainer_id exists
+      if (data.trainer) {
+        const token = await AsyncStorage.getItem('access_token');
+        const api = authApis(token);
+        const response = await api.get(`${API_ENDPOINTS.trainers}${data.trainer}/`);
+        setTrainer(response.data);
+      }
     } catch (error) {
       console.error('Lỗi khi tải thông tin lớp học:', error);
       Alert.alert('Lỗi', 'Không thể tải thông tin lớp học. Vui lòng thử lại sau.');
@@ -46,14 +56,52 @@ const ClassDetails = ({ route, navigation }) => {
         return;
       }
 
-      const result = await enrollClass(classData.id);
-      console.log('Kết quả đăng ký:', result);
+      if (classData.is_enrolled) {
+        // Nếu đã đăng ký thì hủy đăng ký
+        Alert.alert(
+          'Xác nhận hủy đăng ký',
+          'Bạn có chắc chắn muốn hủy đăng ký lớp học này không?',
+          [
+            {
+              text: 'Không',
+              style: 'cancel'
+            },
+            {
+              text: 'Có',
+              onPress: async () => {
+                try {
+                  const result = await cancelEnrollment(classData.id);
+                  if (result.status === 'success') {
+                    Alert.alert('Thành công', 'Hủy đăng ký lớp học thành công!');
+                    loadClassData(); // Reload thông tin lớp học
+                  } else {
+                    Alert.alert('Thông báo', result.message || 'Hủy đăng ký không thành công');
+                  }
+                } catch (error) {
+                  console.error('Lỗi khi hủy đăng ký:', error);
+                  Alert.alert('Lỗi', error.message || 'Hủy đăng ký thất bại. Vui lòng thử lại.');
+                }
+              }
+            }
+          ]
+        );
+      } else {
+        // Kiểm tra số lượng học viên trước khi đăng ký
+        if (classData.current_capacity >= classData.max_members) {
+          Alert.alert('Thông báo', 'Lớp học đã đủ số lượng học viên!');
+          return;
+        }
 
-      if (result.status === 'already_enrolled') {
-        Alert.alert('Thông báo', result.message);
-      } else if (result.status === 'success') {
-        Alert.alert('Thành công', 'Đăng ký lớp học thành công!');
-        loadClassData(); // Reload thông tin lớp học
+        // Nếu chưa đăng ký thì đăng ký
+        const result = await enrollClass(classData.id);
+        console.log('Kết quả đăng ký:', result);
+
+        if (result.status === 'already_enrolled') {
+          Alert.alert('Thông báo', result.message);
+        } else if (result.status === 'success') {
+          Alert.alert('Thành công', 'Đăng ký lớp học thành công!');
+          loadClassData(); // Reload thông tin lớp học
+        }
       }
     } catch (error) {
       console.error('Lỗi khi đăng ký:', error);
@@ -81,10 +129,7 @@ const ClassDetails = ({ route, navigation }) => {
   }
 
   // Lấy tên huấn luyện viên
-  let trainerName = '';
-  if (classData.trainer) {
-    trainerName = classData.trainer.full_name || classData.trainer.username || '';
-  }
+  const trainerName = trainer?.full_name || 'Đang cập nhật';
 
   // Định dạng ngày giờ
   const formatDateTime = (dateStr) => {
@@ -112,7 +157,7 @@ const ClassDetails = ({ route, navigation }) => {
           </View>
           <View style={styles.infoRow}>
             <Icon name="people" size={20} color="#4A90E2" />
-            <Text style={styles.infoText}>Số thành viên tối đa: {classData.max_members}</Text>
+            <Text style={styles.infoText}>Số học viên: {classData.current_capacity || 0}/{classData.max_members}</Text>
           </View>
           <View style={styles.infoRow}>
             <Icon name="info" size={20} color="#4A90E2" />
@@ -130,10 +175,10 @@ const ClassDetails = ({ route, navigation }) => {
       </ScrollView>
       <View style={styles.bottomContainer}>
         <CustomButton
-          title={enrolling ? 'Đang đăng ký...' : 'Đăng ký'}
+          title={enrolling ? 'Đang xử lý...' : 'Đăng ký'}
           onPress={handleEnroll}
           loading={enrolling}
-          disabled={enrolling || classData.status !== 'active'}
+          disabled={enrolling || classData.status !== 'active' || classData.current_capacity >= classData.max_members || classData.is_enrolled}
           type="primary"
         />
       </View>

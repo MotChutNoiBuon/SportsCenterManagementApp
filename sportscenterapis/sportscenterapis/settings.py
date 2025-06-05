@@ -14,12 +14,9 @@ from pathlib import Path
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
-import os
-
-from dotenv import load_dotenv
 
 import sportscenters.apps
-load_dotenv()
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -114,7 +111,7 @@ WSGI_APPLICATION = 'sportscenterapis.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'sportdb',
+        'NAME': 'sportdb2',
         'USER': 'root',
         'PASSWORD': 'Admin@123',
         'HOST': ''
@@ -182,18 +179,12 @@ CORS_ALLOWED_ORIGINS = [
     'http://192.168.20.162:8000',
     'http://127.0.0.1:8000',
     'http://192.168.2.9:8000',
-    'http://192.168.20.89:8001',
-    'http://192.168.1.9:8000',
-    'http://192.168.152.225:8000',
-    'http://192.168.3.14:8000'
+    'http://192.168.3.8:8000',
+    'http://192.168.151.185'
+
 ]
 ALLOWED_HOSTS = ['*']
 
-# App của Kiệt
-# CLIENT_ID = 'FUmqYnUhP0QfEGYJZ7opuvmpwBLySi09fUfR1hvc'
-# CLIENT_SECRET = '4wab4GxtWeKJogUa7DHPNZjHPHdCkfeWBZv4Ja6JruJaVTpIvIhAhbOsfjY4nvlBc3zYLAblz33I6B4RrWtUj1jHmeoApS8qrjzNZ29JihZelCMw18MssiuAVaX93euq'
-# App của Lộc
-CLIENT_ID = '7RphfNKj71H9i3uaIN9ps6GKtMCxDHWtjWiEPWPI'
-CLIENT_SECRET = 'BTK3xttEJH15ynjVKTC5CRQZsqoZIRUkQHt62rkfGlWoYWDogJfbe5WAJkH4PIIK8wlDqw0tENo2b6zMgwodBjITTEyVpgYnduteXcvHNvJVqpbpOLlsHktDkkXjzowP'
-DATA_UPLOAD_MAX_MEMORY_SIZE = 15 * 1024 * 1024  # 10MB (hoặc hơn nếu cần)
+CLIENT_ID = '20g2f9qSr91eEYq0wAppUETTIhMuNdKaHZxVD2rM'
+CLIENT_SECRET = 'y9Bn8Xq3KGETM7DEYFnCdCM9y34k0ieOOHTpLvJNtUNPReYgpguCd0rQYRl2vLWaymL6Eit1af3Kjw0ETHB9KCA9oTcPmEGHczHgNboQHqBv7HOwd3Lf4HETmuALXQYS'
 

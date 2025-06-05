@@ -1,18 +1,16 @@
 from django.contrib.auth import authenticate
 from django.contrib.auth.hashers import make_password, check_password
-from rest_framework.serializers import ModelSerializer, PrimaryKeyRelatedField
+from rest_framework.serializers import ModelSerializer
 from rest_framework.validators import UniqueValidator
 from rest_framework import serializers
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .models import Class, Trainer, User, Progress, Receptionist, Payment, Member, Notification, Appointment, \
-    InternalNews, Enrollment, Statistic
-
+from .models import Class, Trainer, User, Progress,Receptionist,Payment,Member,Notification,Appointment,InternalNews,Enrollment, Statistic
 
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'phone','role']
         read_only_fields = ['id', 'username', 'email']
 
     def update(self, instance, validated_data):
@@ -22,27 +20,43 @@ class UserProfileSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-
-class TrainerShortSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Trainer
-        fields = ['id', 'full_name', 'username', 'avatar']  # Thêm các trường bạn muốn trả về
-
-
 class ClassSerializer(ModelSerializer):
-    trainer = TrainerShortSerializer(read_only=True)
-    trainer_id = PrimaryKeyRelatedField(
-        queryset=Trainer.objects.all(),
-        source='trainer',
-        write_only=True
-    )
+    is_enrolled = serializers.SerializerMethodField()
+    trainer_info = serializers.SerializerMethodField()
 
     class Meta:
         model = Class
-        fields = ['id', 'name', 'description', 'trainer', 'trainer_id',
-                  'start_time', 'end_time', 'max_members', 'status', 'price',
-                  'active', 'created_date', 'updated_date']
+        fields = [
+            'id', 'name', 'description', 'trainer', 'trainer_info',
+            'start_time', 'end_time', 'current_capacity', 'max_members',
+            'status', 'price', 'is_enrolled'
+        ]
 
+    def get_is_enrolled(self, obj):
+        request = self.context.get('request')
+        user = request.user if request else None
+
+        if user and user.is_authenticated and user.role == 'member':
+            try:
+                member = Member.objects.get(pk=user.pk)  # dùng kế thừa đa bảng
+                return Enrollment.objects.filter(
+                    member=member,
+                    gym_class=obj,
+                    status='approved'
+                ).exists()
+            except Member.DoesNotExist:
+                return False
+
+        return False
+
+    def get_trainer_info(self, obj):
+        if obj.trainer:
+            return {
+                'id': obj.trainer.id,
+                'full_name': f"{obj.trainer.first_name} {obj.trainer.last_name}",
+                'specialization': obj.trainer.specialization
+            }
+        return None
 
 class TrainerSerializer(ModelSerializer):
     class Meta:
@@ -51,126 +65,87 @@ class TrainerSerializer(ModelSerializer):
 
 
 class UserSerializer(serializers.ModelSerializer):
-    password2 = serializers.CharField(write_only=True)
     username = serializers.CharField(validators=[UniqueValidator(queryset=User.objects.all())])
-    email = serializers.EmailField(validators=[UniqueValidator(queryset=User.objects.all())])
 
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'full_name', 'phone', 'password', 'role', 'password2', 'avatar']
+        fields = ['id', 'first_name', 'last_name', 'username', 'password', 'avatar', 'phone', 'email', 'role']
         extra_kwargs = {
-            'password': {'write_only': True},
-            'avatar': {'required': False}
+            'password': {
+                'write_only': True
+            }
         }
-
-    def validate(self, data):
-        if data['password'] != data['password2']:
-            raise serializers.ValidationError({"password": "Mật khẩu không khớp."})
-        return data
 
     def create(self, validated_data):
         password = validated_data.pop('password')
-        validated_data.pop('password2')  # Remove password2 as it's not needed
-        avatar = validated_data.pop('avatar', None)
+        role = validated_data.get('role', 'member')
 
-        # Set role to member
-        validated_data['role'] = 'member'
 
-        # Create Member
-        member = Member(**validated_data)
-        member.set_password(password)
-        if avatar:
-            member.avatar = avatar
-        member.payment_status = 'unpaid'
-        member.save()
+        if role == 'member':
+            user = Member(**validated_data)
+        else:
+            user = User(**validated_data)
 
-        return member
+        user.set_password(password)
+        user.save()
+        return user
 
     def update(self, instance, validated_data):
         if 'password' in validated_data:
-            if 'password2' not in validated_data:
-                raise serializers.ValidationError({"password2": "Cần xác nhận mật khẩu."})
-            if validated_data['password'] != validated_data['password2']:
-                raise serializers.ValidationError({"password": "Mật khẩu không khớp."})
-            instance.set_password(validated_data['password'])
-            validated_data.pop('password')
-            validated_data.pop('password2')
-        
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
+            instance.set_password(validated_data.pop('password'))
+        return super().update(instance, validated_data)
 
     def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data['avatar'] = instance.avatar.url if instance.avatar else None
-        return data
-
+        d = super().to_representation(instance)
+        d['avatar'] = instance.avatar.url if instance.avatar else ''
+        return d
 
 class MemberSerializer(serializers.ModelSerializer):
     class Meta:
         model = Member
         fields = '__all__'
 
-    def create(self, validated_data):
-        data = validated_data.copy()
-        # Set role to member by default
-        data['role'] = 'member'
-        u = Member(**data)
-        u.save()
-        return u
-
-
 class ReceptionistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Receptionist
         fields = '__all__'
 
-
-from rest_framework import serializers
-from .models import Enrollment
-
-
 class EnrollmentSerializer(serializers.ModelSerializer):
-    """
-    Serializer cho model Enrollment, xử lý dữ liệu đăng ký lớp học.
-    """
+    member = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.filter(role='member'),
+        required=False
+    )
+    member_detail = UserSerializer(source='member', read_only=True)
+    class_detail = ClassSerializer(source='gym_class', read_only=True)
 
     class Meta:
         model = Enrollment
-        fields = ['id', 'gym_class', 'status', 'created_date', 'updated_date']
-        read_only_fields = ['status', 'created_date', 'updated_date']
+        fields = [
+            'id',
+            'status',
+            'member',
+            'member_detail',
+            'gym_class',
+            'class_detail',
+        ]
 
     def validate(self, data):
-        """
-        Kiểm tra dữ liệu trước khi tạo bản ghi.
-        - Đảm bảo người dùng có hồ sơ thành viên.
-        - Kiểm tra trùng lặp đăng ký.
-        - Kiểm tra sức chứa lớp học (nếu có).
-        """
-        request = self.context['request']
-        if not hasattr(request.user, 'member'):
-            raise serializers.ValidationError("Người dùng không có hồ sơ thành viên.")
+        user = self.context['request'].user
 
-        member = request.user.member
-        gym_class = data['gym_class']
-
-        # Kiểm tra trùng lặp
-        if Enrollment.objects.filter(member=member, gym_class=gym_class).exists():
-            raise serializers.ValidationError("Bạn đã đăng ký lớp học này rồi.")
-
-        # Kiểm tra sức chứa lớp học (giả định Class có max_capacity và current_capacity)
-        if hasattr(gym_class, 'max_capacity') and hasattr(gym_class, 'current_capacity'):
-            if gym_class.current_capacity >= gym_class.max_capacity:
-                raise serializers.ValidationError("Lớp học đã đầy.")
+        if user.role == 'member':
+            data['member'] = user.member
+        elif user.role == 'receptionist':
+            if 'member' not in data:
+                raise serializers.ValidationError("Receptionist phải chỉ định học viên.")
+            elif isinstance(data['member'], User):
+                try:
+                    data['member'] = data['member'].member  # chuyển từ User sang Member
+                except Member.DoesNotExist:
+                    raise serializers.ValidationError("Người dùng này không phải là hội viên.")
+        else:
+            raise serializers.ValidationError("Bạn không có quyền tạo đăng ký.")
 
         return data
-
-    def create(self, validated_data):
-        """
-        Tạo bản ghi Enrollment với member được gán từ người dùng hiện tại.
-        """
-        return Enrollment.objects.create(**validated_data)
 
 
 class ProgressSerializer(serializers.ModelSerializer):
@@ -178,29 +153,30 @@ class ProgressSerializer(serializers.ModelSerializer):
         model = Progress
         fields = '__all__'
 
-
 class AppointmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Appointment
         fields = '__all__'
-
 
 class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = '__all__'
 
-
 class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notification
         fields = '__all__'
 
-
 class InternalNewsSerializer(serializers.ModelSerializer):
+    author_name = serializers.SerializerMethodField()
+
     class Meta:
         model = InternalNews
-        fields = '__all__'
+        fields = ['id', 'title', 'content', 'created_date', 'updated_date', 'active', 'author_name']
+
+    def get_author_name(self, obj):
+        return f"{obj.author.first_name} {obj.author.last_name}"
 
 
 class StatisticSerializer(serializers.ModelSerializer):

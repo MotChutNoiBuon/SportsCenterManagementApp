@@ -21,117 +21,15 @@ import InternalNews from '../Shared/InternalNews';
 
 const Tab = createBottomTabNavigator();
 
-const ClassList = () => {
-  const [classes, setClasses] = useState([]);
-  const [refreshing, setRefreshing] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
-  const navigation = useNavigation();
-  const currentUser = useContext(MyUserContext);
-  const userData = currentUser.payload;
-
-  const loadClasses = async () => {
-    try {
-      setIsLoading(true);
-      const token = await AsyncStorage.getItem('access_token');
-
-      if (!token) {
-        Alert.alert('Lỗi', 'Vui lòng đăng nhập lại');
-        navigation.navigate('Login');
-        return;
-      }
-
-      const api = authApis(token);
-      const response = await api.get(API_ENDPOINTS.classes, {
-        params: {
-          student_id: userData.id,
-          status: 'active',
-          ordering: 'start_time'
-        }
-      });
-      setClasses(response.data.results || response.data);
-    } catch (error) {
-      console.error('Error loading classes:', error);
-      if (error.response?.status === 401) {
-        Alert.alert('Lỗi', 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-        navigation.navigate('Login');
-      } else {
-        Alert.alert('Lỗi', 'Không thể tải danh sách lớp học. Vui lòng thử lại sau.');
-      }
-    } finally {
-      setIsLoading(false);
-      setRefreshing(false);
-    }
-  };
-
-  useEffect(() => {
-    loadClasses();
-  }, []);
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadClasses();
-  };
-
-  const renderClassItem = ({ item }) => (
-    <TouchableOpacity 
-      style={styles.classCard}
-      onPress={() => navigation.navigate('ClassDetail', { classId: item.id })}
-    >
-      <View style={styles.classInfo}>
-        <Text style={styles.className}>{item.name}</Text>
-        <Text style={styles.classTime}>
-          {new Date(item.start_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - 
-          {new Date(item.end_time).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
-        </Text>
-        <View style={styles.participantsContainer}>
-          <Ionicons name="people-outline" size={16} color="#666" />
-          <Text style={styles.participantsText}>
-            {item.current_capacity || 0}/{item.max_members || 20}
-          </Text>
-        </View>
-      </View>
-    </TouchableOpacity>
-  );
-
-  if (isLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text>Đang tải...</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Ionicons name="arrow-back" size={24} color="black" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Danh sách lớp học</Text>
-        <View style={{ width: 24 }} />
-      </View>
-      <FlatList
-        data={classes}
-        renderItem={renderClassItem}
-        keyExtractor={item => item.id.toString()}
-        contentContainerStyle={styles.listContainer}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListEmptyComponent={
-          <View style={styles.emptySection}>
-            <Ionicons name="calendar-outline" size={50} color="#ccc" />
-            <Text style={styles.emptyText}>Bạn chưa đăng ký lớp học nào</Text>
-          </View>
-        }
-      />
-    </View>
-  );
-};
-
 const DashboardContent = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalMembers: 0,
+    activeMembers: 0,
+    todayClasses: 0,
+    pendingRegistrations: 0,
+  });
 
   const navigation = useNavigation();
   const currentUser = useContext(MyUserContext);
@@ -153,7 +51,14 @@ const DashboardContent = () => {
       }
 
       const api = authApis(token);
-      // TODO: Add any necessary API calls here
+      // TODO: Add API calls to fetch receptionist-specific data
+      // For now using mock data
+      setStats({
+        totalMembers: 150,
+        activeMembers: 120,
+        todayClasses: 8,
+        pendingRegistrations: 5,
+      });
 
     } catch (error) {
       console.error('Error loading dashboard data:', error);
@@ -191,7 +96,7 @@ const DashboardContent = () => {
     if (userData?.first_name && userData?.last_name) {
       return `${userData.first_name} ${userData.last_name}`;
     }
-    return userData?.username || 'Khách hàng';
+    return userData?.username || 'Lễ tân';
   };
 
   const handleAvatarPress = () => {
@@ -234,25 +139,38 @@ const DashboardContent = () => {
         </View>
       </View>
 
+      {/* Stats Section */}
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Ionicons name="people-outline" size={24} color="#2196f3" />
+          <Text style={styles.statValue}>{stats.totalMembers}</Text>
+          <Text style={styles.statLabel}>Tổng thành viên</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Ionicons name="person-outline" size={24} color="#4caf50" />
+          <Text style={styles.statValue}>{stats.activeMembers}</Text>
+          <Text style={styles.statLabel}>Thành viên hoạt động</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Ionicons name="calendar-outline" size={24} color="#ff9800" />
+          <Text style={styles.statValue}>{stats.todayClasses}</Text>
+          <Text style={styles.statLabel}>Lớp học hôm nay</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Ionicons name="document-text-outline" size={24} color="#f44336" />
+          <Text style={styles.statValue}>{stats.pendingRegistrations}</Text>
+          <Text style={styles.statLabel}>Đăng ký chờ duyệt</Text>
+        </View>
+      </View>
+
       {/* Navigation Buttons */}
       <View style={styles.nav}>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Classes')}>
-          <View style={[styles.iconContainer, { backgroundColor: '#e3f2fd' }]}>
-            <Ionicons name="calendar-outline" size={24} color="#2196f3" />
-          </View>
-          <Text style={styles.navText}>Lớp học</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('CoachList')}>
+       
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('EditClasses')}>
           <View style={[styles.iconContainer, { backgroundColor: '#f3e5f5' }]}>
-            <Ionicons name="fitness-outline" size={24} color="#9c27b0" />
+            <Ionicons name="calendar-outline" size={24} color="#9c27b0" />
           </View>
-          <Text style={styles.navText}>Huấn luyện viên</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem}>
-          <View style={[styles.iconContainer, { backgroundColor: '#fff3e0' }]}>
-            <Ionicons name="time-outline" size={24} color="#ff9800" />
-          </View>
-          <Text style={styles.navText}>Lịch của tôi</Text>
+          <Text style={styles.navText}>Quản lý lớp học</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.navItem} onPress={handleLogout}>
           <View style={[styles.iconContainer, { backgroundColor: '#ffebee' }]}>
@@ -265,7 +183,7 @@ const DashboardContent = () => {
   );
 };
 
-const CustomerDashboard = () => {
+const ReceptionistDashboard = () => {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -323,10 +241,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
   greetingContainer: {
     flexDirection: 'column',
   },
@@ -348,14 +262,48 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
   },
+  statsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    padding: 10,
+    justifyContent: 'space-between',
+  },
+  statCard: {
+    width: '48%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginVertical: 5,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+  },
   nav: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginBottom: 20,
     padding: 20,
   },
   navItem: {
+    width: '48%',
     alignItems: 'center',
+    marginBottom: 20,
   },
   iconContainer: {
     width: 50,
@@ -369,52 +317,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
   },
-  listContainer: {
-    padding: 20,
-  },
-  classCard: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 15,
-    marginBottom: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  classInfo: {
-    flex: 1,
-  },
-  className: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  classTime: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
-  },
-  participantsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  participantsText: {
-    fontSize: 14,
-    color: '#666',
-    marginLeft: 5,
-  },
-  emptySection: {
-    backgroundColor: '#fff',
-    borderRadius: 10,
-    padding: 20,
-    alignItems: 'center',
-    marginTop: 20,
-  },
-  emptyText: {
-    color: '#666',
-    marginTop: 10,
-    textAlign: 'center',
-  },
 });
 
-export default CustomerDashboard;
+export default ReceptionistDashboard;

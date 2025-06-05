@@ -66,8 +66,8 @@ export default function LoginScreen() {
       try {
         const res = await apiConfig.post(API_ENDPOINTS['login'], {
           ...user,
-          client_id: '7RphfNKj71H9i3uaIN9ps6GKtMCxDHWtjWiEPWPI',
-          client_secret: 'BTK3xttEJH15ynjVKTC5CRQZsqoZIRUkQHt62rkfGlWoYWDogJfbe5WAJkH4PIIK8wlDqw0tENo2b6zMgwodBjITTEyVpgYnduteXcvHNvJVqpbpOLlsHktDkkXjzowP',
+          client_id: '20g2f9qSr91eEYq0wAppUETTIhMuNdKaHZxVD2rM',
+          client_secret: 'y9Bn8Xq3KGETM7DEYFnCdCM9y34k0ieOOHTpLvJNtUNPReYgpguCd0rQYRl2vLWaymL6Eit1af3Kjw0ETHB9KCA9oTcPmEGHczHgNboQHqBv7HOwd3Lf4HETmuALXQYS',
           grant_type: 'password'
         });
 
@@ -88,12 +88,18 @@ export default function LoginScreen() {
         // Điều hướng theo role (nếu có)
         console.log('User role:', u.data.role);
         
-        if (u.data.role === 'customer') {
+        if (u.data.role === 'member') {
           console.log('Navigating to CustomerDashboard');
           nav.navigate("CustomerDashboard");
         } else if (u.data.role === 'trainer') {
           console.log('Navigating to CoachDashboard');
           nav.navigate("CoachDashboard");
+        } else if (u.data.role === 'admin') {
+          console.log('Navigating to AdminDashboard');
+          nav.navigate("AdminDashboard");
+        } else if (u.data.role === 'receptionist') {
+          console.log('Navigating to ReceptionistDashboard');
+          nav.navigate("ReceptionistDashboard");
         } else {
           console.log('Navigating to default dashboard');
           nav.navigate("CustomerDashboard");
